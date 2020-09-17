@@ -1,8 +1,10 @@
 #pragma once
 
 #include <vector>
+#include <list>
 #include <string>
 #include <iostream>
+#include <mutex>
 
 #ifdef CHAOS_EXPORT
 #define CHAOS_API __declspec(dllexport)

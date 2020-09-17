@@ -47,5 +47,8 @@
     <ClCompile Include="src\core\file.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\allocator.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

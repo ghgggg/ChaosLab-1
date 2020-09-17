@@ -173,4 +173,54 @@ namespace chaos
 	{
 		if (ptr) { _aligned_free(ptr); }
 	}
+
+
+	class CHAOS_API Allocator
+	{
+	public:
+		virtual ~Allocator() = default;
+
+		virtual void* FastMalloc(size_t size) = 0;
+		virtual void FastFree(void* ptr) = 0;
+	};
+
+	class CHAOS_API PoolAllocator : public Allocator
+	{
+	public:
+		PoolAllocator();
+		~PoolAllocator();
+
+		virtual void* FastMalloc(size_t size) override;
+		virtual void FastFree(void* ptr) override;
+
+		void SetSizeCompareRatio(float scr);
+		__declspec(property(put = SetSizeCompareRatio)) uint size_compare_ratio;
+
+		void Clear();
+	private:
+		std::mutex budgets_lock;
+		std::mutex payouts_lock;
+		uint _size_compare_ratio; // 0~256
+		std::list<std::pair<size_t, void*>> budgets;
+		std::list<std::pair<size_t, void*>> payouts;
+	};
+
+	class CHAOS_API UnlockedPoolAllocator : public Allocator
+	{
+	public:
+		UnlockedPoolAllocator();
+		~UnlockedPoolAllocator();
+
+		virtual void* FastMalloc(size_t size) override;
+		virtual void FastFree(void* ptr) override;
+
+		void SetSizeCompareRatio(float scr);
+		__declspec(property(put = SetSizeCompareRatio)) uint size_compare_ratio;
+
+		void Clear();
+	private:
+		uint _size_compare_ratio; // 0~256
+		std::list<std::pair<size_t, void*>> budgets;
+		std::list<std::pair<size_t, void*>> payouts;
+	};
 }

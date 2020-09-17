@@ -166,6 +166,7 @@
     <ClInclude Include="include\core\log.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\core\allocator.cpp" />
     <ClCompile Include="src\core\core.cpp" />
     <ClCompile Include="src\core\file.cpp" />
     <ClCompile Include="src\core\log.cpp" />
