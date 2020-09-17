@@ -2,6 +2,8 @@
 
 #include <intrin.h>
 
+#define MALLOC_ALIGN 16
+
 // exchange-add operation for atomic operations on reference counters
 // Just for windows, reference to NCNN
 #define CHAOS_XADD(addr, delta) (int)_InterlockedExchangeAdd((long volatile*)addr, delta)
@@ -133,4 +135,42 @@ namespace chaos
 		Type buf[(fixed_size > 0) ? fixed_size : 1];
 	};
 
+
+	/// <summary>
+	/// <para>Aligns a pointer to the specified number of bytes</para>
+	/// <para>The function returns the aligned pointer of the same type as the input pointer:</para>
+	/// <para>(_Tp*)(((size_t)ptr + n - 1) and -n)</para>
+	/// </summary>
+	/// <param name="ptr">Aligned pointer</param>
+	/// <param name="n">Alignment size that must be a power of two</param>
+	/// <return>The aligned pointer of the same type as the input pointer</return>
+	template<typename _Tp> static inline _Tp* AlignPtr(_Tp* ptr, int n = (int)sizeof(_Tp))
+	{
+		CHECK((n & (n - 1)) == 0); // n is a power of 2
+		return (_Tp*)(((size_t)ptr + n - 1) & -n);
+	}
+
+	/// <summary>
+	/// <para>Aligns a buffer size to the specified number of bytes</para>
+	/// <para>The function returns the minimum number that is greater than or equal to sz and is divisible by n :</para>
+	/// <para>(sz + n - 1) and -n</para>
+	/// </summary>
+	/// <param name="sz">Buffer size to align</param>
+	/// <param name="n">Alignment size that must be a power of two</param>
+	/// <return>The minimum number that is greater than or equal to sz and is divisible by n</return>
+	static inline size_t AlignSize(size_t sz, int n)
+	{
+		CHECK((n & (n - 1)) == 0); // n is a power of 2
+		return (sz + n - 1) & -n;
+	}
+
+	static inline void* FastMalloc(size_t size)
+	{
+		return _aligned_malloc(size, MALLOC_ALIGN);
+	}
+
+	static inline void FastFree(void* ptr)
+	{
+		if (ptr) { _aligned_free(ptr); }
+	}
 }

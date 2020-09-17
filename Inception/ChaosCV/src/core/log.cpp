@@ -4,7 +4,7 @@
 
 namespace chaos
 {
-	static int log_level;
+	//static int log_level;
 	static std::mutex mtx;
 
 	std::ostream& operator<<(std::ostream& stream, const LogSeverity& severity)
@@ -32,7 +32,7 @@ namespace chaos
 	LogMessage::LogMessage(const char* file, int line, const LogSeverity& severity)
 		: severity(severity)
 	{
-		if (severity >= log_level)
+		//if (severity >= log_level)
 		{
 			File _file(file);
 
@@ -50,7 +50,7 @@ namespace chaos
 
 	LogMessage::LogMessage(const char* file, int line, const char* message, const LogSeverity& severity) : LogMessage(file, line, severity)
 	{
-		if (severity >= log_level) message_data << message;
+		/*if (severity >= log_level)*/ message_data << message;
 	}
 
 
@@ -69,7 +69,7 @@ namespace chaos
 	void LogMessage::Flush()
 	{
 		mtx.lock();
-		if (severity >= log_level)
+		//if (severity >= log_level)
 		{
 			std::string message = message_data.str();
 
