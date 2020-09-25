@@ -64,7 +64,7 @@ namespace chaos
 		}
 
 		//! destructor. calls deallocate()
-		~AutoBuffer() { Deallocate(); }
+		virtual ~AutoBuffer() { Deallocate(); }
 
 		//! allocates the new buffer of size _size. if the _size is small enough, stack-allocated buffer is used
 		void Allocate(size_t _size)
@@ -115,11 +115,11 @@ namespace chaos
 				delete[] prevptr;
 		}
 		//! returns the current buffer size
-		size_t size() const { return sz; }
+		inline size_t size() const noexcept { return sz; }
 		//! returns pointer to the real buffer, stack-allocated or heap-allocated
-		inline Type* data() { return ptr; }
+		inline Type* data() noexcept { return ptr; }
 		//! returns read-only pointer to the real buffer, stack-allocated or heap-allocated
-		inline const Type* data() const { return ptr; }
+		inline const Type* data() const noexcept { return ptr; }
 
 		//! returns a reference to the element at specified location. No bounds checking is performed in Release builds.
 		inline Type& operator[] (size_t i) { CHECK_LT(i, sz) << "out of range"; return ptr[i]; }
