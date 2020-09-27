@@ -25,7 +25,7 @@ namespace chaos
 		void Release();
 
 		bool empty() const noexcept { return data == nullptr || shape.vol() == 0; }
-		bool IsContinue() const noexcept { return shape.vol() == (shape[0] * steps[0]); }
+		bool IsContinue() const noexcept { return shape.vol() == ((size_t)shape[0] * steps[0]); }
 
 		/// <summary>ref_cnt++</summary>
 		void AddRef() noexcept { if(ref_cnt) CHAOS_XADD(ref_cnt, 1); }
@@ -48,6 +48,6 @@ namespace chaos
 		Depth depth = Depth::D1;
 		Packing packing = Packing::CHW;
 		Shape shape;
-		Steps steps; // * elemsize
+		Steps steps;
 	};
 }

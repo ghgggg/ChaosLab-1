@@ -48,13 +48,15 @@ namespace chaos
 		FATAL,
 	};
 
-	inline size_t operator*(size_t lhs, const Depth& rhs)
+	template<class Type>
+	inline Type operator*(Type lhs, const Depth& rhs)
 	{
-		return lhs * static_cast<size_t>(rhs);
+		return lhs * static_cast<Type>(rhs);
 	}
-	inline size_t operator*(size_t lhs, const Packing& rhs)
+	template<class Type>
+	inline Type operator*(Type lhs, const Packing& rhs)
 	{
-		return lhs * static_cast<size_t>(rhs);
+		return lhs * static_cast<Type>(rhs);
 	}
 }
 

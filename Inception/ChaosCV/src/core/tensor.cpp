@@ -8,9 +8,11 @@ namespace chaos
 	{
 		Create(shape, depth, packing, allocator);
 	}
-	Tensor::Tensor(const Shape& shape, const Depth& depth, const Packing& packing, void* data, const Steps& _steps)
-		: data(data), allocator(nullptr), shape(shape), depth(depth), packing(packing), steps(_steps)
+	Tensor::Tensor(const Shape& _shape, const Depth& _depth, const Packing& _packing, void* _data, const Steps& _steps)
+		: data(_data), shape(_shape), depth(_depth), packing(_packing) 
 	{
+		steps = _steps.empty() ? Steps(shape, 1 * depth * packing) : _steps;
+		CHECK_EQ(steps.size(), shape.size());
 	}
 
 	Tensor::~Tensor() { Release(); }
@@ -35,6 +37,7 @@ namespace chaos
 		shape = t.shape;
 		depth = t.depth;
 		packing = t.packing;
+		steps = t.steps;
 
 		return *this;
 	}
@@ -50,18 +53,12 @@ namespace chaos
 		packing = _packing;
 		allocator = _allocator;
 
-		steps = Steps(shape.size());
-		for (int64 i = shape.size() -2; i >= 0; i--)
-		{
-			steps[i] = shape[i + 1] * steps[i + 1];
-		}
-		steps = steps * (uint)(1 * depth * packing);
+		steps = Steps(shape, 1 * depth * packing);
 
-		//elem_size = depth * packing;
-		size_t vol = shape.vol();
-		if (vol > 0)
+		size_t total = (size_t)steps[0] * shape[0];
+		if (total > 0)
 		{
-			size_t size = AlignSize(vol * depth * packing, 4);
+			size_t size = AlignSize(total * depth * packing, 4);
 
 			if (allocator)
 				data = allocator->FastMalloc(size + sizeof(*ref_cnt));
@@ -89,8 +86,8 @@ namespace chaos
 
 	void Tensor::CopyTo(Tensor& t) const
 	{
-		t.Create(shape, depth, packing, allocator);
-		if (IsContinue() || steps.empty())
+		if (t.empty()) t.Create(shape, depth, packing, allocator);
+		if (IsContinue() && t.IsContinue())
 		{
 			memcpy(t.data, data, (size_t)shape[0] * steps[0]);
 		}
@@ -98,17 +95,18 @@ namespace chaos
 		{
 			size_t dims = shape.size();
 			size_t rows = shape.vol() / shape.back();
-			size_t len = t.steps[dims - 2]; // shape.back() * depth * packing; // t.steps[sz - 1]
+			size_t rstep = t.steps[dims - 2];
+			size_t len = shape.back() * depth * packing; // row lenth
 			for (size_t r = 0; r < rows; r++)
 			{
 				size_t offset = 0;
-				size_t row = r * len;
+				size_t row = r * rstep;
 				for (int j = 0; j < shape.size() - 1; j++)
 				{
 					offset += (row / t.steps[j]) * steps[j];
 					row %= t.steps[j];
 				}
-				memcpy((uchar*)t + r * len, (uchar*)data + offset, len);
+				memcpy((uchar*)t + r * rstep, (uchar*)data + offset, len);
 			}
 		}
 	}

@@ -14,7 +14,7 @@ namespace chaos
 		using Buffer = AutoBuffer<Type, 8>;
 		using ConstIterator = VecConstIterator<Type>;
 
-		Vec() : Buffer() {}
+		Vec() : Buffer(0) {}
 		~Vec() = default;
 
 		template<class Tp, std::enable_if_t<std::is_convertible_v<Tp, Type>, bool> = true>
@@ -159,21 +159,17 @@ namespace chaos
 	public:
 		using Vec<uint>::Vec;
 
-		Steps(size_t size) 
-		{ 
-			Allocate(size); 
-			ptr[sz - 1] = 1; // the last step alwarys 1
-		}
-		~Steps() {};
-
-		Steps& operator*(uint scale)
+		Steps(const Shape& shape, uint elem_size)
 		{
-			for (size_t i = 0; i < sz; i++)
+			Allocate(shape.size());
+			ptr[sz - 1] = elem_size;
+			for (int64 i = shape.size() - 2; i >= 0; i--)
 			{
-				ptr[i] *= scale;
+				ptr[i] = shape[i + 1] * ptr[i + 1];
 			}
-			return *this;
 		}
+
+		~Steps() {};
 	};
 
 	class CHAOS_API Point : Vec<float>

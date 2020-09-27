@@ -40,15 +40,15 @@ namespace chaos
         size_t esz = static_cast<size_t>(src.depth), astep = AlignSize(m * esz, 16) / esz, vstep = AlignSize(n * esz, 16) / esz;
         AutoBuffer<uchar> _buf(urows * astep + n * vstep + n * esz + 32);
         uchar* buf = AlignPtr(_buf.data(), 16);
-        Tensor temp_a(Shape(n, m), Depth::D4, Packing::CHW, buf, astep);
+        Tensor temp_a(Shape(n, m), Depth::D4, Packing::CHW, buf, { astep, 1 });
         Tensor temp_w(Shape(n, 1), Depth::D4, Packing::CHW, buf + urows * astep);
-        Tensor temp_u(Shape(urows, m), Depth::D4, Packing::CHW, buf, astep), temp_v;
+        Tensor temp_u(Shape(urows, m), Depth::D4, Packing::CHW, buf, { astep, 1 }), temp_v;
 
         if (compute_uv)
-            temp_v = Tensor(Shape(n, n), Depth::D4, Packing::CHW, AlignPtr(buf + urows * astep + n * esz, 16), vstep);
+            temp_v = Tensor(Shape(n, n), Depth::D4, Packing::CHW, AlignPtr(buf + urows * astep + n * esz, 16), { vstep, 1 });
 
         if (urows > n)
-            memset(temp_u, 0, temp_u.shape.vol() * esz);
+            memset(temp_u, 0, temp_u.shape[0] * temp_u.steps[0] * esz);
             //temp_u = Scalar::all(0);
 
         if (!at)
@@ -58,8 +58,8 @@ namespace chaos
 
         //if (type == CV_32F)
         {
-            JacobiSVDImpl<float>(temp_a, temp_u.step, temp_w,
-                temp_v, temp_v.  , m, n, compute_uv ? urows : 0);
+            JacobiSVDImpl<float>(temp_a, temp_u.steps.data(), temp_w,
+                temp_v, temp_v.steps.data()  , m, n, compute_uv ? urows : 0);
         }
         //else
         //{
@@ -85,6 +85,7 @@ namespace chaos
             }
         }
 #endif
+
     }
 
 
