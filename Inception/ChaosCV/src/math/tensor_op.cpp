@@ -33,13 +33,6 @@ namespace chaos
     }
 
     ////////////////////////////////////// transpose /////////////////////////////////////////
-    template<typename Type> 
-    static void Transpose_(const uchar* src, size_t sstep, uchar* dst, size_t dstep, Shape sz)
-    {
-
-    }
-
-
     void Transpose(const Tensor& src, Tensor& dst)
     {
         for (size_t i = 0; i < src.shape[0]; i++)
@@ -62,8 +55,8 @@ namespace chaos
             for (int j = 0; j < num_axes; j++)
             {
                 int order = permute_order[j];
-                old_idx += (idx / new_steps[j]) * old_steps[order];
-                idx %= new_steps[j];
+                old_idx += (idx * sizeof(Type) / new_steps[j]) * old_steps[order] / sizeof(Type);
+                idx %= (new_steps[j] / sizeof(Type));
             }
             dst[i] = src[old_idx];
         }
@@ -71,10 +64,27 @@ namespace chaos
 
     void Permute(const Tensor& src, Tensor& dst, const Vec<uint>& orders)
     {
+        CHECK_EQ(src.packing, Packing::CHW);
         CHECK_EQ(src.shape.size(), orders.size());
 
+        size_t num_axes = src.shape.size();
+        bool need_permute = false;
+        for (size_t i = 0; i < num_axes; i++)
+        {
+            if (i != orders[i])
+            {
+                need_permute = true;
+                break;
+            }
+        }
+        if (not need_permute)
+        {
+            dst = src;
+            return;
+        }
+
         Shape shape = src.shape;
-        for (size_t i = 0; i < orders.size(); i++)
+        for (size_t i = 0; i < num_axes; i++)
         {
             shape[i] = src.shape[orders[i]];
         }
@@ -82,10 +92,13 @@ namespace chaos
         CHECK_EQ(src.shape.vol(), shape.vol());
 
         dst.Create(shape, src.depth, src.packing, src.allocator);
-        auto old_steps = src.shape.steps();
-        auto new_steps = shape.steps();
 
-        PermuteImpl<float>(shape.vol(), src, orders.data(), old_steps.data(), new_steps.data(), shape.size(), dst);
+        if (Depth::D4 == src.depth)
+            return PermuteImpl<float>(shape.vol(), src, orders.data(), src.steps.data(), dst.steps.data(), num_axes, dst);
+        if (Depth::D8 == src.depth)
+            return PermuteImpl<double>(shape.vol(), src, orders.data(), src.steps.data(), dst.steps.data(), num_axes, dst);
+        LOG(FATAL) << "not supported yet";
+        return;
     }
 
 }

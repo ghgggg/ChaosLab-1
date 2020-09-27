@@ -8,13 +8,15 @@ namespace chaos
 	{
 		Create(shape, depth, packing, allocator);
 	}
-	Tensor::Tensor(const Shape& shape, const Depth& depth, const Packing& packing, void* data, Allocator* allocator)
-		: data(data), allocator(allocator), shape(shape), depth(depth), packing(packing) {}
+	Tensor::Tensor(const Shape& shape, const Depth& depth, const Packing& packing, void* data, const Steps& _steps)
+		: data(data), allocator(nullptr), shape(shape), depth(depth), packing(packing), steps(_steps)
+	{
+	}
 
 	Tensor::~Tensor() { Release(); }
 
 	Tensor::Tensor(const Tensor& t) :
-		data(t.data), allocator(t.allocator), ref_cnt(t.ref_cnt), shape(t.shape), depth(t.depth), packing(t.packing)
+		data(t.data), allocator(t.allocator), ref_cnt(t.ref_cnt), shape(t.shape), depth(t.depth), packing(t.packing), steps(t.steps)
 	{
 		if (ref_cnt) CHAOS_XADD(ref_cnt, 1);
 	}
@@ -48,6 +50,13 @@ namespace chaos
 		packing = _packing;
 		allocator = _allocator;
 
+		steps = Steps(shape.size());
+		for (int64 i = shape.size() -2; i >= 0; i--)
+		{
+			steps[i] = shape[i + 1] * steps[i + 1];
+		}
+		steps = steps * (uint)(1 * depth * packing);
+
 		//elem_size = depth * packing;
 		size_t vol = shape.vol();
 		if (vol > 0)
@@ -80,12 +89,27 @@ namespace chaos
 
 	void Tensor::CopyTo(Tensor& t) const
 	{
-		memcpy(t.data, data, shape.vol() * depth * packing);
+		t.Create(shape, depth, packing, allocator);
+		if (IsContinue() || steps.empty())
+		{
+			memcpy(t.data, data, (size_t)shape[0] * steps[0]);
+		}
+		else
+		{
+			size_t dims = shape.size();
+			size_t rows = shape.vol() / shape.back();
+			size_t len = t.steps[dims - 2]; // shape.back() * depth * packing; // t.steps[sz - 1]
+			for (size_t r = 0; r < rows; r++)
+			{
+				size_t offset = 0;
+				size_t row = r * len;
+				for (int j = 0; j < shape.size() - 1; j++)
+				{
+					offset += (row / t.steps[j]) * steps[j];
+					row %= t.steps[j];
+				}
+				memcpy((uchar*)t + r * len, (uchar*)data + offset, len);
+			}
+		}
 	}
-	//Tensor Tensor::channel(size_t ch) const
-	//{
-	//}
-	//Tensor Tensor::row(size_t r) const
-	//{
-	//}
 }

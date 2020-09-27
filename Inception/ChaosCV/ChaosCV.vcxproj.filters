@@ -83,5 +83,8 @@
     <ClCompile Include="src\math\tensor_op.cpp">
       <Filter>Source Files\math</Filter>
     </ClCompile>
+    <ClCompile Include="src\math\lapack.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

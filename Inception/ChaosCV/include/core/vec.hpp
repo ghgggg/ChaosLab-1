@@ -51,6 +51,8 @@ namespace chaos
 		ConstIterator begin() const { return ConstIterator(*this); }
 		ConstIterator end() const { return ConstIterator(*this) + sz; }
 
+		bool empty() const noexcept { return sz == 0 || ptr == nullptr; }
+
 		const Type& back() const { return ptr[sz - 1]; }
 		Type& back() { return ptr[sz - 1]; }
 
@@ -117,18 +119,6 @@ namespace chaos
 
 		size_t vol() const noexcept { return std::accumulate(begin(), end(), 1, std::multiplies<uint>()); }
 
-		Vec<uint> steps() const 
-		{ 
-			Vec<uint> steps;
-			steps.Resize(sz);
-			steps[sz - 1] = 1;
-			for (int64 i = sz - 2; i >= 0; i--)
-			{
-				steps[i] = steps[i + 1] * ptr[i + 1];
-			}
-			return steps;
-		}
-
 		template<class Tp, std::enable_if_t<std::is_convertible_v<Tp, uint>, bool> = true>
 		void Insert(size_t pos, const Tp& val)
 		{
@@ -162,9 +152,28 @@ namespace chaos
 			}
 			return true;
 		}
+	};
 
-	private:
+	class CHAOS_API Steps : public Vec<uint> // to save steps for shape
+	{
+	public:
+		using Vec<uint>::Vec;
 
+		Steps(size_t size) 
+		{ 
+			Allocate(size); 
+			ptr[sz - 1] = 1; // the last step alwarys 1
+		}
+		~Steps() {};
+
+		Steps& operator*(uint scale)
+		{
+			for (size_t i = 0; i < sz; i++)
+			{
+				ptr[i] *= scale;
+			}
+			return *this;
+		}
 	};
 
 	class CHAOS_API Point : Vec<float>

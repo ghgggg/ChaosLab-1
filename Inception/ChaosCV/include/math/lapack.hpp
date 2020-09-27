@@ -385,11 +385,228 @@ namespace chaos
     }
 
 
+    struct v_float32x4
+    {
+        typedef float lane_type;
+        typedef __m128 vector_type;
+        enum { nlanes = 4 };
+
+        v_float32x4() : val(_mm_setzero_ps()) {}
+        explicit v_float32x4(__m128 v) : val(v) {}
+        v_float32x4(float v0, float v1, float v2, float v3)
+        {
+            val = _mm_setr_ps(v0, v1, v2, v3);
+        }
+        float get0() const
+        {
+            return _mm_cvtss_f32(val);
+        }
+
+        __m128 val;
+    };
+
+    inline v_float32x4 vx_setall_f32(float v) { return v_float32x4(_mm_set_ps1((float)v)); }
+    inline v_float32x4 vx_load(const float* ptr) { return v_float32x4(_mm_loadu_ps(ptr)); }
+    inline void v_store(float* ptr, const v_float32x4& a) { _mm_storeu_ps(ptr, a.val); };
+    inline v_float32x4 operator*(const v_float32x4& a, const v_float32x4& b) { return v_float32x4(_mm_mul_ps(a.val, b.val)); }
+    inline v_float32x4 operator+(const v_float32x4& a, const v_float32x4& b) { return v_float32x4(_mm_add_ps(a.val, b.val)); }
+    inline v_float32x4 operator-(const v_float32x4& a, const v_float32x4& b) { return v_float32x4(_mm_sub_ps(a.val, b.val)); }
+
+    inline void vx_cleanup() {} //??????
+
+    int givens(float* a, float* b, int n, float c, float s)
+    {
+        if (n < v_float32x4::nlanes)
+            return 0;
+        int k = 0;
+        v_float32x4 c4 = vx_setall_f32(c), s4 = vx_setall_f32(s);
+        for (; k <= n - v_float32x4::nlanes; k += v_float32x4::nlanes)
+        {
+            v_float32x4 a0 = vx_load(a + k);
+            v_float32x4 b0 = vx_load(b + k);
+            v_float32x4 t0 = (a0 * c4) + (b0 * s4);
+            v_float32x4 t1 = (b0 * c4) - (a0 * s4);
+            v_store(a + k, t0);
+            v_store(b + k, t1);
+        }
+        vx_cleanup();
+        return k;
+    }
 
     template<typename Type, std::enable_if_t<std::is_floating_point_v<Type>, bool> = true> 
     void JacobiSVDImpl(Type* At, size_t astep, Type* _W, Type* Vt, size_t vstep, int m, int n, int n1, double minval, Type eps)
     {
+        AutoBuffer<double> Wbuf(n);
+        double* W = Wbuf.data();
+        int i, j, k, iter, max_iter = std::max(m, 30);
+        Type c, s;
+        double sd;
+        //astep /= sizeof(At[0]);
+        //vstep /= sizeof(Vt[0]);
 
+        for (i = 0; i < n; i++)
+        {
+            for (k = 0, sd = 0; k < m; k++)
+            {
+                Type t = At[i * astep + k];
+                sd += (double)t * t;
+            }
+            W[i] = sd;
+
+            if (Vt)
+            {
+                for (k = 0; k < n; k++)
+                    Vt[i * vstep + k] = 0;
+                Vt[i * vstep + i] = 1;
+            }
+        }
+
+        for (iter = 0; iter < max_iter; iter++)
+        {
+            bool changed = false;
+
+            for (i = 0; i < n - 1; i++)
+                for (j = i + 1; j < n; j++)
+                {
+                    Type* Ai = At + i * astep, * Aj = At + j * astep;
+                    double a = W[i], p = 0, b = W[j];
+
+                    for (k = 0; k < m; k++)
+                        p += (double)Ai[k] * Aj[k];
+
+                    if (std::abs(p) <= eps * std::sqrt((double)a * b))
+                        continue;
+
+                    p *= 2;
+                    double beta = a - b, gamma = hypot((double)p, beta);
+                    if (beta < 0)
+                    {
+                        double delta = (gamma - beta) * 0.5;
+                        s = (Type)std::sqrt(delta / gamma);
+                        c = (Type)(p / (gamma * s * 2));
+                    }
+                    else
+                    {
+                        c = (Type)std::sqrt((gamma + beta) / (gamma * 2));
+                        s = (Type)(p / (gamma * c * 2));
+                    }
+
+                    a = b = 0;
+                    for (k = 0; k < m; k++)
+                    {
+                        Type t0 = c * Ai[k] + s * Aj[k];
+                        Type t1 = -s * Ai[k] + c * Aj[k];
+                        Ai[k] = t0; Aj[k] = t1;
+
+                        a += (double)t0 * t0; b += (double)t1 * t1;
+                    }
+                    W[i] = a; W[j] = b;
+
+                    changed = true;
+
+                    if (Vt)
+                    {
+                        Type* Vi = Vt + i * vstep, * Vj = Vt + j * vstep;
+                        k = givens(Vi, Vj, n, c, s);
+
+                        for (; k < n; k++)
+                        {
+                            Type t0 = c * Vi[k] + s * Vj[k];
+                            Type t1 = -s * Vi[k] + c * Vj[k];
+                            Vi[k] = t0; Vj[k] = t1;
+                        }
+                    }
+                }
+            if (!changed)
+                break;
+        }
+
+        for (i = 0; i < n; i++)
+        {
+            for (k = 0, sd = 0; k < m; k++)
+            {
+                Type t = At[i * astep + k];
+                sd += (double)t * t;
+            }
+            W[i] = std::sqrt(sd);
+        }
+
+        for (i = 0; i < n - 1; i++)
+        {
+            j = i;
+            for (k = i + 1; k < n; k++)
+            {
+                if (W[j] < W[k])
+                    j = k;
+            }
+            if (i != j)
+            {
+                std::swap(W[i], W[j]);
+                if (Vt)
+                {
+                    for (k = 0; k < m; k++)
+                        std::swap(At[i * astep + k], At[j * astep + k]);
+
+                    for (k = 0; k < n; k++)
+                        std::swap(Vt[i * vstep + k], Vt[j * vstep + k]);
+                }
+            }
+        }
+
+        for (i = 0; i < n; i++)
+            _W[i] = (Type)W[i];
+
+        if (!Vt)
+            return;
+
+        //RNG rng(0x12345678);
+        for (i = 0; i < n1; i++)
+        {
+            sd = i < n ? W[i] : 0;
+
+            for (int ii = 0; ii < 100 && sd <= minval; ii++)
+            {
+                // if we got a zero singular value, then in order to get the corresponding left singular vector
+                // we generate a random vector, project it to the previously computed left singular vectors,
+                // subtract the projection and normalize the difference.
+                const Type val0 = (Type)(1. / m);
+                for (k = 0; k < m; k++)
+                {
+                    Type val = val0; //(rng.next() & 256) != 0 ? val0 : -val0;
+                    At[i * astep + k] = val;
+                }
+                for (iter = 0; iter < 2; iter++)
+                {
+                    for (j = 0; j < i; j++)
+                    {
+                        sd = 0;
+                        for (k = 0; k < m; k++)
+                            sd += At[i * astep + k] * At[j * astep + k];
+                        Type asum = 0;
+                        for (k = 0; k < m; k++)
+                        {
+                            Type t = (Type)(At[i * astep + k] - sd * At[j * astep + k]);
+                            At[i * astep + k] = t;
+                            asum += std::abs(t);
+                        }
+                        asum = asum > eps * 100 ? 1 / asum : 0;
+                        for (k = 0; k < m; k++)
+                            At[i * astep + k] *= asum;
+                    }
+                }
+                sd = 0;
+                for (k = 0; k < m; k++)
+                {
+                    Type t = At[i * astep + k];
+                    sd += (double)t * t;
+                }
+                sd = std::sqrt(sd);
+            }
+
+            s = (Type)(sd > minval ? 1 / sd : 0.);
+            for (k = 0; k < m; k++)
+                At[i * astep + k] *= s;
+        }
     }
     
 }
