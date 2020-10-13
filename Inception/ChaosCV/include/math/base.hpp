@@ -37,10 +37,6 @@ namespace chaos
         return true;
     }
 
-
-    CHAOS_API void SVDcompute(const Tensor& _aarr, Tensor& _w,
-        Tensor& _u, Tensor& _vt, int flags);
-
     class CHAOS_API SVD
     {
     public:
@@ -69,13 +65,13 @@ namespace chaos
         SVD::compute(A, w, u, vt);
         @endcode
 
-        @param src decomposed matrix. The depth has to be Depth::D4.
+        @param A decomposed matrix. The depth has to be Depth::D4.
         @param w calculated singular values
         @param u calculated left singular vectors
         @param vt transposed matrix of right singular vectors
         @param flags operation flags - see SVD::Flags.
           */
-        static void Compute(const Tensor& src, Tensor& w, Tensor& u, Tensor& vt, int flags = 0);
+        static void Compute(const InputArray& A, const OutputArray& w, const OutputArray& u, const OutputArray& vt, int flags = 0);
 
 
         /** @brief solves an under-determined singular linear system
@@ -88,6 +84,6 @@ namespace chaos
         @param src left-hand-side matrix.
         @param dst found solution.
           */
-        static void SolveZ(const Tensor& src, Tensor dst);
+        static void SolveZ(const InputArray& src, const OutputArray& dst);
     };
 }

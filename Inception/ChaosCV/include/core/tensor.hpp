@@ -5,6 +5,7 @@
 
 namespace chaos
 {
+	class OutputArray;
 	class CHAOS_API Tensor
 	{
 	public:
@@ -19,7 +20,8 @@ namespace chaos
 
 		void Create(const Shape& _shape, const Depth& _depth, const Packing& _packing, Allocator* _allocator);
 
-		void CopyTo(Tensor& t) const;
+		//void CopyTo(Tensor& t) const;
+		void CopyTo(const OutputArray& arr) const;
 
 		/// <summary>Release the tensor, ref_cnt--</summary>
 		void Release();

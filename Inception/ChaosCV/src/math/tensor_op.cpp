@@ -3,15 +3,98 @@
 
 namespace chaos
 {
-    //////////////////////////////////////// set identity ////////////////////////////////////////////
-    void SetIdentity(Tensor& tensor, double val)
+    InputArray::InputArray() { Init(NONE, nullptr); }
+    InputArray::InputArray(const Tensor& data) { Init(TENSOR, &data); }
+    Tensor InputArray::GetTensor() const
     {
-        CHECK_EQ(tensor.shape.size(), 2) << "just support 2D tensor";
-        int rows = tensor.shape[0], cols = tensor.steps[0] / tensor.depth / tensor.packing;
-
-        if (Depth::D4 == tensor.depth)
+        if (flag == TENSOR)
         {
-            float* data = tensor;
+            return *(Tensor*)obj;
+        }
+        LOG(FATAL) << "unknown/unsupported array type";
+    }
+    void InputArray::Init(int _flag, const void* _obj)
+    {
+        flag = _flag; obj = (void*)_obj;
+    }
+
+
+    OutputArray::OutputArray() { Init(NONE, nullptr); }
+    OutputArray::OutputArray(Tensor& data) { Init(TENSOR, &data); }
+    void OutputArray::Create(const Shape& shape, const Depth& depth, const Packing& packing, Allocator* allocator) const
+    {
+        if (flag == TENSOR)
+        {
+            return ((Tensor*)obj)->Create(shape, depth, packing, allocator);
+        }
+        if (flag == NONE)
+        {
+            LOG(FATAL) << "Create() called for the missing output array";
+        }
+        LOG(FATAL) << "unknown/unsupported array type";
+    }
+    void OutputArray::Release() const
+    {
+        if (flag == TENSOR)
+        {
+            return ((Tensor*)obj)->Release();
+        }
+        if (flag == NONE)
+        {
+            return;
+        }
+        LOG(FATAL) << "unknown/unsupported array type";
+    }
+    bool OutputArray::Needed() const
+    {
+        return flag != NONE;
+    }
+    void Tensor::CopyTo(const OutputArray& arr) const
+    {
+        arr.Create(shape, depth, packing, allocator);
+        Tensor t = arr.GetTensor();
+
+        //if (t.empty()) t.Create(shape, depth, packing, allocator);
+        if (IsContinue() && t.IsContinue())
+        {
+            memcpy(t.data, data, (size_t)shape[0] * steps[0]);
+        }
+        else
+        {
+            size_t dims = shape.size();
+            size_t rows = shape.vol() / shape.back();
+            size_t rstep = t.steps[dims - 2];
+            size_t len = shape.back() * depth * packing; // row lenth
+            for (size_t r = 0; r < rows; r++)
+            {
+                size_t offset = 0;
+                size_t row = r * rstep;
+                for (int j = 0; j < shape.size() - 1; j++)
+                {
+                    offset += (row / t.steps[j]) * steps[j];
+                    row %= t.steps[j];
+                }
+                memcpy((uchar*)t + r * rstep, (uchar*)data + offset, len);
+            }
+        }
+    }
+
+    InputOutputArray::InputOutputArray() { Init(NONE, nullptr); }
+    InputOutputArray::InputOutputArray(Tensor& data) { Init(TENSOR, &data); }
+
+    static InputOutputArray none;
+    const InputOutputArray& noArray() { return none; }
+
+    //////////////////////////////////////// set identity ////////////////////////////////////////////
+    void SetIdentity(const InputOutputArray& _src, double val)
+    {
+        Tensor src = _src.GetTensor();
+        //CHECK_EQ(tensor.shape.size(), 2) << "just support 2D tensor";
+        int rows = src.shape[0], cols = src.steps[0] / src.depth / src.packing;
+
+        if (Depth::D4 == src.depth)
+        {
+            float* data = src;
             for (int i = 0; i < rows; i++, data += cols)
             {
                 for (int j = 0; j < cols; j++)
@@ -21,9 +104,9 @@ namespace chaos
             }
             return;
         }
-        if (Depth::D8 == tensor.depth)
+        if (Depth::D8 == src.depth)
         {
-            double* data = tensor;
+            double* data = src;
             for (int i = 0; i < rows; i++, data += cols)
             {
                 for (int j = 0; j < cols; j++)
@@ -186,19 +269,36 @@ namespace chaos
         }
     }
 
-    void Transpose(const Tensor& src, Tensor& dst)
-    {
-        CHECK_EQ(src.shape.size(), 2);
-        CHECK_EQ(src.packing, Packing::CHW);
+    //void Transpose(const Tensor& src, Tensor& dst)
+    //{
+    //    CHECK_EQ(src.shape.size(), 2);
+    //    CHECK_EQ(src.packing, Packing::CHW);
+    //    if (src.data == dst.data) // inplace
+    //    {
+    //        CHECK_EQ(dst.shape[0], dst.shape[1]);
+    //        TransposeInplaceImpl<float>(dst, dst.steps[0], dst.shape[0]);
+    //    }
+    //    else
+    //    {
+    //        dst.Create({ src.shape[1], src.shape[0] }, src.depth, src.packing, src.allocator);
+    //        TransposeImpl<float>(src, src.steps[0], dst, dst.steps[0], src.shape[1], src.shape[0]);
+    //    }
+    //}
 
-        if (src.data == dst.data) // inplace
+    void Transpose(const InputArray& _src, const OutputArray& _dst)
+    {
+        Tensor src = _src.GetTensor();
+
+        _dst.Create({ src.shape[1], src.shape[0] }, src.depth, src.packing, src.allocator);
+        Tensor dst = _dst.GetTensor();
+
+        if (dst.data == src.data)
         {
             CHECK_EQ(dst.shape[0], dst.shape[1]);
             TransposeInplaceImpl<float>(dst, dst.steps[0], dst.shape[0]);
         }
         else
         {
-            dst.Create({ src.shape[1], src.shape[0] }, src.depth, src.packing, src.allocator);
             TransposeImpl<float>(src, src.steps[0], dst, dst.steps[0], src.shape[1], src.shape[0]);
         }
     }

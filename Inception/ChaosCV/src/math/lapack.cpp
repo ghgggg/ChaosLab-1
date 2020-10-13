@@ -446,13 +446,13 @@ namespace chaos
         }
     }
 
-    void SVDcompute(const Tensor& _aarr, Tensor& _w,
-        Tensor& _u, Tensor& _vt, int flags)
+    void SVDcompute(const InputArray& _aarr, const OutputArray& _w,
+        const OutputArray& _u, const OutputArray& _vt, int flags)
     {
-        Tensor src = _aarr;
+        Tensor src = _aarr.GetTensor();
         int m = src.shape[0], n = src.shape[1];
         Depth depth = src.depth;
-        bool compute_uv = true; //_u.needed() || _vt.needed();
+        bool compute_uv = _u.Needed() || _vt.Needed();
         bool full_uv = (flags & SVD::FULL_UV) != 0;
 
         CHECK_EQ(Depth::D4, src.depth);
@@ -492,7 +492,7 @@ namespace chaos
             src.CopyTo(temp_a);
 
         JacobiSVD(temp_a, temp_u.steps[0], temp_w,
-            temp_v, temp_v.steps[0], m, n, compute_uv ? urows : 0);
+            temp_v, vstep, m, n, compute_uv ? urows : 0);
 
         temp_w.CopyTo(_w);
         if (compute_uv)
@@ -508,5 +508,11 @@ namespace chaos
                 temp_u.CopyTo(_vt);
             }
         }
+    }
+
+
+    void SVD::Compute(const InputArray& A, const OutputArray& w, const OutputArray& u, const OutputArray& vt, int flags)
+    {
+        SVDcompute(A, w, u, vt, flags);
     }
 }
