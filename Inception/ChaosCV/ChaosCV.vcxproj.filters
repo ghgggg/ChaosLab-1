@@ -60,8 +60,8 @@
     <ClInclude Include="include\math\base.hpp">
       <Filter>Header Files\math</Filter>
     </ClInclude>
-    <ClInclude Include="include\math\lapack.hpp">
-      <Filter>Header Files\math</Filter>
+    <ClInclude Include="include\core\simd.hpp">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

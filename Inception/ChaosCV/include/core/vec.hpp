@@ -15,7 +15,7 @@ namespace chaos
 		using ConstIterator = VecConstIterator<Type>;
 
 		Vec() : Buffer(0) {}
-		~Vec() = default;
+		virtual ~Vec() = default;
 
 		template<class Tp, std::enable_if_t<std::is_convertible_v<Tp, Type>, bool> = true>
 		Vec(const std::initializer_list<Tp>& list) : Buffer(list.size())
