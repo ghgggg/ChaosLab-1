@@ -150,8 +150,188 @@ namespace chaos
         return CholImpl(A, astep, m, b, bstep, n);
     }
 
+
+    template<class Type>
+    bool JacobiImpl(Type* A, size_t astep, Type* W, Type* V, size_t vstep, int n, uchar* buf)
+    {
+        const Type eps = std::numeric_limits<Type>::epsilon();
+        int i, j, k, m;
+
+        astep /= sizeof(A[0]);
+        if (V)
+        {
+            vstep /= sizeof(V[0]);
+            for (i = 0; i < n; i++)
+            {
+                for (j = 0; j < n; j++)
+                    V[i * vstep + j] = (Type)0;
+                V[i * vstep + i] = (Type)1;
+            }
+        }
+
+        int iters, maxIters = n * n * 30;
+
+        int* indR = (int*)AlignPtr(buf, sizeof(int));
+        int* indC = indR + n;
+        Type mv = (Type)0;
+
+        for (k = 0; k < n; k++)
+        {
+            W[k] = A[(astep + 1) * k];
+            if (k < n - 1)
+            {
+                for (m = k + 1, mv = std::abs(A[astep * k + m]), i = k + 2; i < n; i++)
+                {
+                    Type val = std::abs(A[astep * k + i]);
+                    if (mv < val)
+                        mv = val, m = i;
+                }
+                indR[k] = m;
+            }
+            if (k > 0)
+            {
+                for (m = 0, mv = std::abs(A[k]), i = 1; i < k; i++)
+                {
+                    Type val = std::abs(A[astep * i + k]);
+                    if (mv < val)
+                        mv = val, m = i;
+                }
+                indC[k] = m;
+            }
+        }
+
+        if (n > 1) for (iters = 0; iters < maxIters; iters++)
+        {
+            // find index (k,l) of pivot p
+            for (k = 0, mv = std::abs(A[indR[0]]), i = 1; i < n - 1; i++)
+            {
+                Type val = std::abs(A[astep * i + indR[i]]);
+                if (mv < val)
+                    mv = val, k = i;
+            }
+            int l = indR[k];
+            for (i = 1; i < n; i++)
+            {
+                Type val = std::abs(A[astep * indC[i] + i]);
+                if (mv < val)
+                    mv = val, k = indC[i], l = i;
+            }
+
+            Type p = A[astep * k + l];
+            if (std::abs(p) <= eps)
+                break;
+            Type y = (Type)((W[l] - W[k]) * 0.5);
+            Type t = std::abs(y) + hypot(p, y);
+            Type s = hypot(p, t);
+            Type c = t / s;
+            s = p / s; t = (p / t) * p;
+            if (y < 0)
+                s = -s, t = -t;
+            A[astep * k + l] = 0;
+
+            W[k] -= t;
+            W[l] += t;
+
+            Type a0, b0;
+
+            //#undef rotate
+            //#define rotate(v0, v1) a0 = v0, b0 = v1, v0 = a0*c - b0*s, v1 = a0*s + b0*c
+            auto Rotate = [&](Type& v0, Type& v1) { a0 = v0; b0 = v1; v0 = a0 * c - b0 * s; v1 = a0 * s + b0 * c; };
+
+            // rotate rows and columns k and l
+            for (i = 0; i < k; i++)
+                Rotate(A[astep * i + k], A[astep * i + l]);
+            for (i = k + 1; i < l; i++)
+                Rotate(A[astep * k + i], A[astep * i + l]);
+            for (i = l + 1; i < n; i++)
+                Rotate(A[astep * k + i], A[astep * l + i]);
+
+            // rotate eigenvectors
+            if (V)
+                for (i = 0; i < n; i++)
+                    Rotate(V[vstep * k + i], V[vstep * l + i]);
+
+            //#undef rotate
+
+            for (j = 0; j < 2; j++)
+            {
+                int idx = j == 0 ? k : l;
+                if (idx < n - 1)
+                {
+                    for (m = idx + 1, mv = std::abs(A[astep * idx + m]), i = idx + 2; i < n; i++)
+                    {
+                        Type val = std::abs(A[astep * idx + i]);
+                        if (mv < val)
+                            mv = val, m = i;
+                    }
+                    indR[idx] = m;
+                }
+                if (idx > 0)
+                {
+                    for (m = 0, mv = std::abs(A[idx]), i = 1; i < idx; i++)
+                    {
+                        Type val = std::abs(A[astep * i + idx]);
+                        if (mv < val)
+                            mv = val, m = i;
+                    }
+                    indC[idx] = m;
+                }
+            }
+        }
+
+        // sort eigenvalues & eigenvectors
+        for (k = 0; k < n - 1; k++)
+        {
+            m = k;
+            for (i = k + 1; i < n; i++)
+            {
+                if (W[m] < W[i])
+                    m = i;
+            }
+            if (k != m)
+            {
+                std::swap(W[m], W[k]);
+                if (V)
+                    for (i = 0; i < n; i++)
+                        std::swap(V[vstep * m + i], V[vstep * k + i]);
+            }
+        }
+
+        return true;
+    }
+
+
+    bool Eigen(const InputArray& _src, const OutputArray& _evals, const OutputArray& _evects)
+    {
+        Tensor src = _src.GetTensor();
+        //int type = src.type();
+        int n = src.shape[0];
+
+        CHECK_EQ(src.shape[0], src.shape[1]);
+        CHECK_EQ(src.depth, Depth::D4);
+
+        Tensor v;
+        if (_evects.Needed())
+        {
+            _evects.Create({ n, n }, src.depth, src.packing, src.allocator);
+            v = _evects.GetTensor();
+        }
+
+        size_t esz = 1 * src.depth, astep = AlignSize(n * esz, 16);
+        AutoBuffer<uchar> buf(n * astep + n * 5LL * esz + 32);
+        uchar* ptr = AlignPtr(buf.data(), 16);
+        Tensor a({ n, n }, src.depth, src.packing, ptr, { astep,  esz }), w({ n, 1 }, src.depth, src.packing, ptr + astep * n);
+        ptr += astep * n + esz * n;
+        src.CopyTo(a);
+
+        bool ok = JacobiImpl<float>(a, astep, w, v, v.steps[0], n, ptr);
+        w.CopyTo(_evals);
+        return ok;
+    }
+
     int givens(float* a, float* b, int n, float c, float s)
     {
+#if 0
         if (n < v_float32x4::nlanes)
             return 0;
         int k = 0;
@@ -166,6 +346,41 @@ namespace chaos
             v_store(b + k, t1);
         }
         vx_cleanup();
+        return k;
+#endif
+        int k = 0;
+        for (; k <= n - 4; k += 4)
+        {
+            float& a0 = a[k];
+            float& a1 = a[k+1];
+            float& a2 = a[k+2];
+            float& a3 = a[k+3];
+
+            float& b0 = b[k];
+            float& b1 = b[k+1];
+            float& b2 = b[k+2];
+            float& b3 = b[k+3];
+
+            float t00 = a0 * c + b0 * s;
+            float t01 = a1 * c + b1 * s;
+            float t02 = a2 * c + b2 * s;
+            float t03 = a3 * c + b3 * s;
+
+            float t10 = b0 * c - a0 * s;
+            float t11 = b1 * c - a1 * s;
+            float t12 = b2 * c - a2 * s;
+            float t13 = b3 * c - a3 * s;
+
+            a0 = t00;
+            a1 = t01;
+            a2 = t02;
+            a3 = t03;
+
+            b0 = t10;
+            b1 = t11;
+            b2 = t12;
+            b3 = t13;
+        }
         return k;
     }
 
@@ -446,6 +661,21 @@ namespace chaos
         }
     }
 
+    static void
+        SVBkSb(int m, int n, const float* w, size_t wstep,
+            const float* u, size_t ustep, bool uT,
+            const float* v, size_t vstep, bool vT,
+            const float* b, size_t bstep, int nb,
+            float* x, size_t xstep, uchar* buffer)
+    {
+        SVBkSbImpl(m, n, w, wstep ? (int)(wstep / sizeof(w[0])) : 1,
+            u, (int)(ustep / sizeof(u[0])), uT,
+            v, (int)(vstep / sizeof(v[0])), vT,
+            b, (int)(bstep / sizeof(b[0])), nb,
+            x, (int)(xstep / sizeof(x[0])),
+            (double*)AlignPtr(buffer, sizeof(double)), (float)(DBL_EPSILON * 2));
+    }
+
     void SVDcompute(const InputArray& _aarr, const OutputArray& _w,
         const OutputArray& _u, const OutputArray& _vt, int flags)
     {
@@ -510,9 +740,177 @@ namespace chaos
         }
     }
 
-
     void SVD::Compute(const InputArray& A, const OutputArray& w, const OutputArray& u, const OutputArray& vt, int flags)
     {
         SVDcompute(A, w, u, vt, flags);
+    }
+
+    void SVD::BackSubst(const InputArray& _w, const InputArray& _u,
+        const InputArray& _vt, const InputArray& _rhs,
+        const OutputArray& _dst)
+    {
+        Tensor w = _w.GetTensor(), u = _u.GetTensor(), vt = _vt.GetTensor(), rhs = _rhs.GetTensor();
+        int esz = 1 * w.depth;
+        auto depth = w.depth;
+        auto packing = w.packing;
+        auto allocator = w.allocator;
+
+        uint m = u.shape[0], n = vt.shape[1], nb = rhs.empty() ? rhs.shape[1] : m, nm = std::min(m, n);
+        size_t wstep = w.shape[0] == 1 ? (size_t)esz : w.shape[1] == 1 ? (size_t)w.steps[0] : (size_t)w.steps[0] + esz;
+        AutoBuffer<uchar> buffer(nb * sizeof(double) + 16);
+
+        CHECK(w.depth == u.depth && u.depth == vt.depth && u.data && vt.data && w.data);
+        CHECK(u.shape[1] >= nm && vt.shape[0] >= nm &&
+            (w.shape == Shape(nm, 1) || w.shape == Shape(1, nm) || w.shape == Shape(vt.shape[0], u.shape[1])));
+        CHECK(rhs.data == 0 || (rhs.depth == depth && rhs.shape[0] == m));
+
+        _dst.Create({ n, nb }, depth, packing, allocator);
+        Tensor dst = _dst.GetTensor();
+
+        SVBkSb(m, n, w, wstep, u, u.steps[0], false,
+            vt, vt.steps[0], true, rhs, rhs.empty() ? 0 : rhs.steps[0], nb,
+            dst, dst.steps[0], buffer.data());
+    }
+
+    bool Invert(const InputArray& _src, const OutputArray& _dst, int method)
+    {
+        Tensor src = _src.GetTensor();
+        size_t esz = 1 * src.depth;
+        auto depth = src.depth;
+        auto packing = src.packing;
+        auto allocator = src.allocator;
+
+        int m = src.shape[0], n = src.shape[1];
+        
+        if (method == DECOMP_SVD)
+        {
+            int nm = std::min(m, n);
+
+            AutoBuffer<uchar> _buf((m * nm + nm + nm * n) * esz + sizeof(double));
+            uchar* buf = AlignPtr((uchar*)_buf.data(), (int)esz);
+            Tensor u({ m, nm }, depth, packing, buf);
+            Tensor w({ nm, 1 }, depth, packing, (uchar*)u.data + esz * m * nm);
+            Tensor vt({ nm, n }, depth, packing, (uchar*)w + nm * esz);
+
+            SVD::Compute(src, w, u, vt);
+            SVD::BackSubst(w, u, vt, Tensor(), _dst);
+
+            return (w[0] >= FLT_EPSILON ?
+                w[n - 1LL] / w[0] : 0);
+        }
+
+        CHECK_EQ(m, n);
+
+        if (method == DECOMP_EIG)
+        {
+            AutoBuffer<uchar> _buf((n * n * 2LL + n) * esz + sizeof(double));
+            uchar* buf = AlignPtr((uchar*)_buf.data(), (int)esz);
+            Tensor u({ n, n }, depth, packing, buf);
+            Tensor w({ n, 1 }, depth, packing, (uchar*)u.data + n * n * esz);
+            Tensor vt({ n, n }, depth, packing, (uchar*)w.data + n * esz);
+             
+            Eigen(src, w, vt);
+            Transpose(vt, u);
+            SVD::BackSubst(w, u, vt, Tensor(), _dst);
+
+            return (w[0] >= FLT_EPSILON ?
+                w[n - 1LL] / w[0] : 0);
+        }
+
+        CHECK(method == DECOMP_LU || method == DECOMP_CHOLESKY);
+
+        _dst.Create({ n, n }, depth, packing, allocator);
+        Tensor dst = _dst.GetTensor();
+
+        if (n <= 3)
+        {
+            bool result = false;
+            const uchar* srcdata = src;
+            uchar* dstdata = dst;
+            size_t srcstep = src.steps[0];
+            size_t dststep = dst.steps[0];
+
+            auto Sf = [=](int y, int x)->const float& { return ((float*)(srcdata + y * srcstep))[x]; };
+            auto Df = [=](int y, int x)->float& { return ((float*)(dstdata + y * dststep))[x]; };
+
+            if (n == 2)
+            {
+                // det2
+                double d = (double)Sf(0, 0) * Sf(1, 1) - (double)Sf(0, 1) * Sf(1, 0);
+                if (d != 0.)
+                {
+                    result = true;
+                    d = 1. / d;
+                    double t0, t1;
+                    t0 = Sf(0, 0) * d;
+                    t1 = Sf(1, 1) * d;
+                    Df(1, 1) = (float)t0;
+                    Df(0, 0) = (float)t1;
+                    t0 = -Sf(0, 1) * d;
+                    t1 = -Sf(1, 0) * d;
+                    Df(0, 1) = (float)t0;
+                    Df(1, 0) = (float)t1;
+                }
+            }
+            else if (n == 3)
+            {
+                // det3
+                double d = 
+                    Sf(0, 0) * ((double)Sf(1, 1) * Sf(2, 2) - (double)Sf(1, 2) * Sf(2, 1)) - 
+                    Sf(0, 1) * ((double)Sf(1, 0) * Sf(2, 2) - (double)Sf(1, 2) * Sf(2, 0)) + 
+                    Sf(0, 2) * ((double)Sf(1, 0) * Sf(2, 1) - (double)Sf(1, 1) * Sf(2, 0));
+
+                if (d != 0.)
+                {
+                    double t[12];
+
+                    result = true;
+                    d = 1. / d;
+                    t[0] = (((double)Sf(1, 1) * Sf(2, 2) - (double)Sf(1, 2) * Sf(2, 1)) * d);
+                    t[1] = (((double)Sf(0, 2) * Sf(2, 1) - (double)Sf(0, 1) * Sf(2, 2)) * d);
+                    t[2] = (((double)Sf(0, 1) * Sf(1, 2) - (double)Sf(0, 2) * Sf(1, 1)) * d);
+
+                    t[3] = (((double)Sf(1, 2) * Sf(2, 0) - (double)Sf(1, 0) * Sf(2, 2)) * d);
+                    t[4] = (((double)Sf(0, 0) * Sf(2, 2) - (double)Sf(0, 2) * Sf(2, 0)) * d);
+                    t[5] = (((double)Sf(0, 2) * Sf(1, 0) - (double)Sf(0, 0) * Sf(1, 2)) * d);
+
+                    t[6] = (((double)Sf(1, 0) * Sf(2, 1) - (double)Sf(1, 1) * Sf(2, 0)) * d);
+                    t[7] = (((double)Sf(0, 1) * Sf(2, 0) - (double)Sf(0, 0) * Sf(2, 1)) * d);
+                    t[8] = (((double)Sf(0, 0) * Sf(1, 1) - (double)Sf(0, 1) * Sf(1, 0)) * d);
+
+                    Df(0, 0) = (float)t[0]; Df(0, 1) = (float)t[1]; Df(0, 2) = (float)t[2];
+                    Df(1, 0) = (float)t[3]; Df(1, 1) = (float)t[4]; Df(1, 2) = (float)t[5];
+                    Df(2, 0) = (float)t[6]; Df(2, 1) = (float)t[7]; Df(2, 2) = (float)t[8];
+                }
+            }
+            else
+            {
+                CHECK_EQ(n, 1);
+                double d = Sf(0, 0);
+                if (d != 0.)
+                {
+                    result = true;
+                    Df(0, 0) = (float)(1. / d);
+                }
+            }
+
+            return result;
+        }
+
+        AutoBuffer<uchar> buf(esz * n * n);
+        Tensor src1({ n, n }, depth, packing,  buf.data());
+        src.CopyTo(src1);
+        SetIdentity(dst);
+
+        if (method == DECOMP_LU)
+        {
+            return LU(src1, src1.steps[0], n, dst, dst.steps[0], n);
+        }
+        if (method == DECOMP_CHOLESKY)
+        {
+            return Cholesky(src1, src1.steps[0], n, dst, dst.steps[0], n);
+        }
+
+        return false;
     }
 }

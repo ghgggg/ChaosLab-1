@@ -172,7 +172,6 @@
     <ClInclude Include="include\core\def.hpp" />
     <ClInclude Include="include\core\file.hpp" />
     <ClInclude Include="include\core\log.hpp" />
-    <ClInclude Include="include\core\simd.hpp" />
     <ClInclude Include="include\core\tensor.hpp" />
     <ClInclude Include="include\core\vec.hpp" />
     <ClInclude Include="include\math\base.hpp" />

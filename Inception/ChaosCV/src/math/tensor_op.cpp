@@ -1,89 +1,9 @@
-#include "math/tensor_op.hpp"
-
+#include "math/base.hpp"
+//#include "math/tensor_op.hpp"
 
 namespace chaos
 {
-    InputArray::InputArray() { Init(NONE, nullptr); }
-    InputArray::InputArray(const Tensor& data) { Init(TENSOR, &data); }
-    Tensor InputArray::GetTensor() const
-    {
-        if (flag == TENSOR)
-        {
-            return *(Tensor*)obj;
-        }
-        LOG(FATAL) << "unknown/unsupported array type";
-    }
-    void InputArray::Init(int _flag, const void* _obj)
-    {
-        flag = _flag; obj = (void*)_obj;
-    }
-
-
-    OutputArray::OutputArray() { Init(NONE, nullptr); }
-    OutputArray::OutputArray(Tensor& data) { Init(TENSOR, &data); }
-    void OutputArray::Create(const Shape& shape, const Depth& depth, const Packing& packing, Allocator* allocator) const
-    {
-        if (flag == TENSOR)
-        {
-            return ((Tensor*)obj)->Create(shape, depth, packing, allocator);
-        }
-        if (flag == NONE)
-        {
-            LOG(FATAL) << "Create() called for the missing output array";
-        }
-        LOG(FATAL) << "unknown/unsupported array type";
-    }
-    void OutputArray::Release() const
-    {
-        if (flag == TENSOR)
-        {
-            return ((Tensor*)obj)->Release();
-        }
-        if (flag == NONE)
-        {
-            return;
-        }
-        LOG(FATAL) << "unknown/unsupported array type";
-    }
-    bool OutputArray::Needed() const
-    {
-        return flag != NONE;
-    }
-    void Tensor::CopyTo(const OutputArray& arr) const
-    {
-        arr.Create(shape, depth, packing, allocator);
-        Tensor t = arr.GetTensor();
-
-        //if (t.empty()) t.Create(shape, depth, packing, allocator);
-        if (IsContinue() && t.IsContinue())
-        {
-            memcpy(t.data, data, (size_t)shape[0] * steps[0]);
-        }
-        else
-        {
-            size_t dims = shape.size();
-            size_t rows = shape.vol() / shape.back();
-            size_t rstep = t.steps[dims - 2];
-            size_t len = shape.back() * depth * packing; // row lenth
-            for (size_t r = 0; r < rows; r++)
-            {
-                size_t offset = 0;
-                size_t row = r * rstep;
-                for (int j = 0; j < shape.size() - 1; j++)
-                {
-                    offset += (row / t.steps[j]) * steps[j];
-                    row %= t.steps[j];
-                }
-                memcpy((uchar*)t + r * rstep, (uchar*)data + offset, len);
-            }
-        }
-    }
-
-    InputOutputArray::InputOutputArray() { Init(NONE, nullptr); }
-    InputOutputArray::InputOutputArray(Tensor& data) { Init(TENSOR, &data); }
-
-    static InputOutputArray none;
-    const InputOutputArray& noArray() { return none; }
+    
 
     //////////////////////////////////////// set identity ////////////////////////////////////////////
     void SetIdentity(const InputOutputArray& _src, double val)
@@ -118,12 +38,7 @@ namespace chaos
         return;
     }
 
-   
-
     ////////////////////////////////////// permute /////////////////////////////////////////
-    // 可能得改一改
-    // 否则对于dst不是连续的状态，不太好处理
-
     template<class Type, std::enable_if_t<std::is_arithmetic_v<Type>, bool> = true>
     void PermuteImpl(size_t count, const Type* src, const uint*permute_order, const uint* src_shapes, const uint* src_steps, 
         const uint* dst_shapes, const uint* dst_steps, size_t num_axes, Type* dst)
@@ -133,7 +48,7 @@ namespace chaos
             int src_idx = 0;
             int dst_idx = 0;
             int idx = i;
-            for (int j = num_axes - 1; j >= 0; j--)
+            for (int64 j = num_axes - 1; j >= 0; j--)
             {
                 int order = permute_order[j];
                 int k = idx % dst_shapes[j];
@@ -145,26 +60,26 @@ namespace chaos
         }
     }
 
-    template<class Type, std::enable_if_t<std::is_arithmetic_v<Type>, bool> = true>
-    void PermuteImpl(size_t count, const Type* src, const uint* permute_order, const uint* old_steps, const uint* new_steps, size_t num_axes, Type* dst)
-    {
-        for (int i = 0; i < count; i++)
-        {
-            int old_idx = 0;
-            int idx = i;
-            for (int j = 0; j < num_axes; j++)
-            {
-                int order = permute_order[j];
-                old_idx += (idx * sizeof(Type) / new_steps[j]) * old_steps[order] / sizeof(Type);
-                idx %= (new_steps[j] / sizeof(Type));
-            }
-            dst[i] = src[old_idx];
-        }
-    }
+    //template<class Type, std::enable_if_t<std::is_arithmetic_v<Type>, bool> = true>
+    //void PermuteImpl(size_t count, const Type* src, const uint* permute_order, const uint* old_steps, const uint* new_steps, size_t num_axes, Type* dst)
+    //{
+    //    for (int i = 0; i < count; i++)
+    //    {
+    //        int old_idx = 0;
+    //        int idx = i;
+    //        for (int j = 0; j < num_axes; j++)
+    //        {
+    //            int order = permute_order[j];
+    //            old_idx += (idx * sizeof(Type) / new_steps[j]) * old_steps[order] / sizeof(Type);
+    //            idx %= (new_steps[j] / sizeof(Type));
+    //        }
+    //        dst[i] = src[old_idx];
+    //    }
+    //}
 
-    void Permute(const Tensor& src, Tensor& dst, const Vec<uint>& orders)
+    void Permute(const InputArray& _src, const OutputArray& _dst, const Vec<uint>& orders)
     {
-        CHECK_EQ(src.packing, Packing::CHW);
+        Tensor src = _src.GetTensor();
         CHECK_EQ(src.shape.size(), orders.size());
 
         size_t num_axes = src.shape.size();
@@ -179,7 +94,8 @@ namespace chaos
         }
         if (not need_permute)
         {
-            dst = src;
+            //dst = src;
+            src.CopyTo(_dst);
             return;
         }
 
@@ -188,21 +104,18 @@ namespace chaos
         {
             shape[i] = src.shape[orders[i]];
         }
-
         CHECK_EQ(src.shape.vol(), shape.vol());
 
-        dst.Create(shape, src.depth, src.packing, src.allocator);
+        _dst.Create(shape, src.depth, src.packing, src.allocator);
+        Tensor dst = _dst.GetTensor();
 
         if (Depth::D4 == src.depth)
             return PermuteImpl<float>(shape.vol(), src, orders.data(), src.shape.data(), src.steps.data(), shape.data(), dst.steps.data(), num_axes, dst);
-        if (Depth::D8 == src.depth)
-            return PermuteImpl<double>(shape.vol(), src, orders.data(), src.shape.data(), src.steps.data(), shape.data(), dst.steps.data(), num_axes, dst);
         LOG(FATAL) << "not supported yet";
         return;
     }
 
     ////////////////////////////////////// transpose /////////////////////////////////////////
-
     template<typename Type, std::enable_if_t<std::is_arithmetic_v<Type>, bool> = true>
     static void TransposeImpl(const uchar* src, size_t sstep, uchar* dst, size_t dstep, int width, int height)
     {
@@ -268,22 +181,6 @@ namespace chaos
                 std::swap(row[j], *(Type*)(data1 + step * j));
         }
     }
-
-    //void Transpose(const Tensor& src, Tensor& dst)
-    //{
-    //    CHECK_EQ(src.shape.size(), 2);
-    //    CHECK_EQ(src.packing, Packing::CHW);
-    //    if (src.data == dst.data) // inplace
-    //    {
-    //        CHECK_EQ(dst.shape[0], dst.shape[1]);
-    //        TransposeInplaceImpl<float>(dst, dst.steps[0], dst.shape[0]);
-    //    }
-    //    else
-    //    {
-    //        dst.Create({ src.shape[1], src.shape[0] }, src.depth, src.packing, src.allocator);
-    //        TransposeImpl<float>(src, src.steps[0], dst, dst.steps[0], src.shape[1], src.shape[0]);
-    //    }
-    //}
 
     void Transpose(const InputArray& _src, const OutputArray& _dst)
     {

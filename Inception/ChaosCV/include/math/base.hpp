@@ -4,38 +4,45 @@
 
 namespace chaos
 {
+    enum DecompTypes
+    {
+        /** Gaussian elimination with the optimal pivot element chosen. */
+        DECOMP_LU = 0,
+        /** singular value decomposition (SVD) method; the system can be over-defined and/or the matrix
+        src1 can be singular */
+        DECOMP_SVD = 1,
+        /** eigenvalue decomposition; the matrix src1 must be symmetrical */
+        DECOMP_EIG = 2,
+        /** Cholesky \f$LL^T\f$ factorization; the matrix src1 must be symmetrical and positively
+        defined */
+        DECOMP_CHOLESKY = 3,
+        /** QR factorization; the system can be over-defined and/or the matrix src1 can be singular */
+        DECOMP_QR = 4,
+    };
+
     CHAOS_API bool LU(float* A, size_t astep, int m, float* b, size_t bstep, int n);
     CHAOS_API bool Cholesky(float* A, size_t astep, int m, float* b, size_t bstep, int n);
 
-    CHAOS_API void JacobiSVD(float* At, size_t astep, float* W, float* Vt, size_t vstep, int m, int n, int n1 = -1);
+    /** @brief Calculates eigenvalues and eigenvectors of a symmetric matrix.
 
+    The function cv::eigen calculates just eigenvalues, or eigenvalues and eigenvectors of the symmetric
+    matrix src:
+    @code
+        src*eigenvectors.row(i).t() = eigenvalues.at<srcType>(i)*eigenvectors.row(i).t()
+    @endcode
 
-    bool Invert(const Tensor& src, Tensor& dst, int method)
-    {
-        int m = src.shape[0], n = src.shape[1];
+    @note Use cv::eigenNonSymmetric for calculation of real eigenvalues and eigenvectors of non-symmetric matrix.
 
-        CHECK_EQ(m, n);
-
-        dst.Create(Shape(n,n), src.depth, src.packing, src.allocator);
-
-        int elem_size = static_cast<int>(src.depth);
-        AutoBuffer<uchar> buf(n * n * elem_size);
-        Tensor src1(Shape(n,n), src.depth, Packing::CHW, buf.data());
-        src.CopyTo(src1);
-
-        SetIdentity(dst);
-
-        auto ret = LU(src1, src1.shape[1], n, dst, dst.shape[1], n);
-        //if (method == DECOMP_LU && type == CV_32F)
-        //    result = hal::LU32f(src1.ptr<float>(), src1.step, n, dst.ptr<float>(), dst.step, n) != 0;
-        //else if (method == DECOMP_LU && type == CV_64F)
-        //    result = hal::LU64f(src1.ptr<double>(), src1.step, n, dst.ptr<double>(), dst.step, n) != 0;
-        //else if (method == DECOMP_CHOLESKY && type == CV_32F)
-        //    result = hal::Cholesky32f(src1.ptr<float>(), src1.step, n, dst.ptr<float>(), dst.step, n);
-        //else
-        //    result = hal::Cholesky64f(src1.ptr<double>(), src1.step, n, dst.ptr<double>(), dst.step, n);
-        return true;
-    }
+    @param src input matrix that must have CV_32FC1 or CV_64FC1 type, square size and be symmetrical
+    (src ^T^ == src).
+    @param eigenvalues output vector of eigenvalues of the same type as src; the eigenvalues are stored
+    in the descending order.
+    @param eigenvectors output matrix of eigenvectors; it has the same size and type as src; the
+    eigenvectors are stored as subsequent matrix rows, in the same order as the corresponding
+    eigenvalues.
+    @sa eigenNonSymmetric, completeSymm , PCA
+    */
+    CHAOS_API bool Eigen(const InputArray& _src, const OutputArray& _evals, const OutputArray& _evects);
 
     class CHAOS_API SVD
     {
@@ -74,6 +81,32 @@ namespace chaos
         static void Compute(const InputArray& A, const OutputArray& w, const OutputArray& u, const OutputArray& vt, int flags = 0);
 
 
+        /** @brief performs a singular value back substitution.
+
+        The method calculates a back substitution for the specified right-hand
+        side:
+
+        \f[\texttt{x} =  \texttt{vt} ^T  \cdot diag( \texttt{w} )^{-1}  \cdot \texttt{u} ^T  \cdot \texttt{rhs} \sim \texttt{A} ^{-1}  \cdot \texttt{rhs}\f]
+
+        Using this technique you can either get a very accurate solution of the
+        convenient linear system, or the best (in the least-squares terms)
+        pseudo-solution of an overdetermined linear system.
+
+        @param rhs right-hand side of a linear system (u\*w\*v')\*dst = rhs to
+        be solved, where A has been previously decomposed.
+
+        @param dst found solution of the system.
+
+        @note Explicit SVD with the further back substitution only makes sense
+        if you need to solve many linear systems with the same left-hand side
+        (for example, src ). If all you need is to solve a single system
+        (possibly with multiple rhs immediately available), simply call solve
+        add pass #DECOMP_SVD there. It does absolutely the same thing.
+          */
+        static void BackSubst(const InputArray& w, const InputArray& u,
+            const InputArray& vt, const InputArray& rhs,
+            const OutputArray& dst);
+
         /** @brief solves an under-determined singular linear system
 
         The method finds a unit-length solution x of a singular linear system
@@ -86,4 +119,35 @@ namespace chaos
           */
         static void SolveZ(const InputArray& src, const OutputArray& dst);
     };
+
+    /** @brief Finds the inverse or pseudo-inverse of a matrix.
+
+    The function cv::invert inverts the matrix src and stores the result in dst
+    . When the matrix src is singular or non-square, the function calculates
+    the pseudo-inverse matrix (the dst matrix) so that norm(src\*dst - I) is
+    minimal, where I is an identity matrix.
+
+    In case of the #DECOMP_LU method, the function returns non-zero value if
+    the inverse has been successfully calculated and false if src is singular.
+
+    In case of the #DECOMP_SVD method, the function returns the inverse
+    condition number of src (the ratio of the smallest singular value to the
+    largest singular value) and false if src is singular. The SVD method
+    calculates a pseudo-inverse matrix if src is singular.
+
+    In case of the #DECOMP_EIG method, the function returns the inverse
+    condition number of src which is a symmetrical matrix and false if src 
+    is singular.
+
+    Similarly to #DECOMP_LU, the method #DECOMP_CHOLESKY works only with
+    non-singular square matrices that should also be symmetrical and
+    positively defined. In this case, the function stores the inverted
+    matrix in dst and returns non-zero. Otherwise, it returns false.
+
+    @param src input floating-point M x N matrix.
+    @param dst output matrix of N x M size and the same type as src.
+    @param flags inversion method (cv::DecompTypes)
+    @sa solve, SVD
+    */
+    CHAOS_API bool Invert(const InputArray& src, const OutputArray& dst, int method = DECOMP_LU);
 }

@@ -52,4 +52,48 @@ namespace chaos
 		Shape shape;
 		Steps steps;
 	};
+
+
+	class CHAOS_API InputArray
+	{
+	public:
+		enum KindFlag
+		{
+			NONE,
+			VEC,
+			TENSOR,
+		};
+
+		InputArray();
+		InputArray(const Tensor& data);
+
+		Tensor GetTensor() const;
+
+		bool IsTensor() const;
+	protected:
+		int flag;
+		void* obj;
+
+		void Init(int _flag, const void* _obj);
+	};
+
+	class CHAOS_API OutputArray : public InputArray
+	{
+	public:
+		OutputArray();
+		OutputArray(Tensor& data);
+
+		bool Needed() const;
+		void Create(const Shape& shape, const Depth& depth, const Packing& packing, Allocator* allocator = nullptr) const;
+		void Release() const;
+	};
+
+	class CHAOS_API InputOutputArray : public OutputArray
+	{
+	public:
+		InputOutputArray();
+		InputOutputArray(Tensor& data);
+	};
+
+	CHAOS_API const InputOutputArray& noArray();
 }

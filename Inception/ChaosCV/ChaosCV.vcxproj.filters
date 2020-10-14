@@ -60,9 +60,6 @@
     <ClInclude Include="include\math\base.hpp">
       <Filter>Header Files\math</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\simd.hpp">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\core.cpp">

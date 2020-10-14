@@ -84,6 +84,35 @@ namespace chaos
 		ref_cnt = nullptr;
 	}
 
+	void Tensor::CopyTo(const OutputArray& arr) const
+	{
+		arr.Create(shape, depth, packing, allocator);
+		Tensor t = arr.GetTensor();
+
+		//if (t.empty()) t.Create(shape, depth, packing, allocator);
+		if (IsContinue() && t.IsContinue())
+		{
+			memcpy(t.data, data, (size_t)shape[0] * steps[0]);
+		}
+		else
+		{
+			size_t dims = shape.size();
+			size_t rows = shape.vol() / shape.back();
+			size_t rstep = t.steps[dims - 2];
+			size_t len = shape.back() * depth * packing; // row lenth
+			for (size_t r = 0; r < rows; r++)
+			{
+				size_t offset = 0;
+				size_t row = r * rstep;
+				for (int j = 0; j < shape.size() - 1; j++)
+				{
+					offset += (row / t.steps[j]) * steps[j];
+					row %= t.steps[j];
+				}
+				memcpy((uchar*)t + r * rstep, (uchar*)data + offset, len);
+			}
+		}
+	}
 	//void Tensor::CopyTo(Tensor& t) const
 	//{
 	//	if (t.empty()) t.Create(shape, depth, packing, allocator);
@@ -110,4 +139,61 @@ namespace chaos
 	//		}
 	//	}
 	//}
+
+
+	InputArray::InputArray() { Init(NONE, nullptr); }
+	InputArray::InputArray(const Tensor& data) { Init(TENSOR, &data); }
+	Tensor InputArray::GetTensor() const
+	{
+		if (flag == TENSOR)
+		{
+			return *(Tensor*)obj;
+		}
+		LOG(FATAL) << "unknown/unsupported array type";
+		return Tensor();
+	}
+	bool InputArray::IsTensor() const { return flag == TENSOR; }
+	void InputArray::Init(int _flag, const void* _obj)
+	{
+		flag = _flag; obj = (void*)_obj;
+	}
+
+
+	OutputArray::OutputArray() { Init(NONE, nullptr); }
+	OutputArray::OutputArray(Tensor& data) { Init(TENSOR, &data); }
+	void OutputArray::Create(const Shape& shape, const Depth& depth, const Packing& packing, Allocator* allocator) const
+	{
+		if (flag == TENSOR)
+		{
+			return ((Tensor*)obj)->Create(shape, depth, packing, allocator);
+		}
+		if (flag == NONE)
+		{
+			LOG(FATAL) << "Create() called for the missing output array";
+		}
+		LOG(FATAL) << "unknown/unsupported array type";
+	}
+	void OutputArray::Release() const
+	{
+		if (flag == TENSOR)
+		{
+			return ((Tensor*)obj)->Release();
+		}
+		if (flag == NONE)
+		{
+			return;
+		}
+		LOG(FATAL) << "unknown/unsupported array type";
+	}
+	bool OutputArray::Needed() const
+	{
+		return flag != NONE;
+	}
+	
+
+	InputOutputArray::InputOutputArray() { Init(NONE, nullptr); }
+	InputOutputArray::InputOutputArray(Tensor& data) { Init(TENSOR, &data); }
+
+	static InputOutputArray none;
+	const InputOutputArray& noArray() { return none; }
 }
