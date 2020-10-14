@@ -1,7 +1,5 @@
 #include "core/core.hpp"
 
-#include <mutex>
-
 namespace chaos
 {
 	//static int log_level;

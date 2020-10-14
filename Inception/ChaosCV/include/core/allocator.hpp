@@ -64,7 +64,7 @@ namespace chaos
 		}
 
 		//! destructor. calls deallocate()
-		~AutoBuffer() { Deallocate(); }
+		virtual ~AutoBuffer() { Deallocate(); }
 
 		//! allocates the new buffer of size _size. if the _size is small enough, stack-allocated buffer is used
 		void Allocate(size_t _size)
@@ -115,11 +115,11 @@ namespace chaos
 				delete[] prevptr;
 		}
 		//! returns the current buffer size
-		size_t size() const { return sz; }
+		inline size_t size() const noexcept { return sz; }
 		//! returns pointer to the real buffer, stack-allocated or heap-allocated
-		inline Type* data() { return ptr; }
+		inline Type* data() noexcept { return ptr; }
 		//! returns read-only pointer to the real buffer, stack-allocated or heap-allocated
-		inline const Type* data() const { return ptr; }
+		inline const Type* data() const noexcept { return ptr; }
 
 		//! returns a reference to the element at specified location. No bounds checking is performed in Release builds.
 		inline Type& operator[] (size_t i) { CHECK_LT(i, sz) << "out of range"; return ptr[i]; }
@@ -173,4 +173,54 @@ namespace chaos
 	{
 		if (ptr) { _aligned_free(ptr); }
 	}
+
+
+	class CHAOS_API Allocator
+	{
+	public:
+		virtual ~Allocator() = default;
+
+		virtual void* FastMalloc(size_t size) = 0;
+		virtual void FastFree(void* ptr) = 0;
+	};
+
+	class CHAOS_API PoolAllocator : public Allocator
+	{
+	public:
+		PoolAllocator();
+		~PoolAllocator();
+
+		virtual void* FastMalloc(size_t size) override;
+		virtual void FastFree(void* ptr) override;
+
+		void SetSizeCompareRatio(float scr);
+		__declspec(property(put = SetSizeCompareRatio)) uint size_compare_ratio;
+
+		void Clear();
+	private:
+		std::mutex budgets_lock;
+		std::mutex payouts_lock;
+		uint _size_compare_ratio; // 0~256
+		std::list<std::pair<size_t, void*>> budgets;
+		std::list<std::pair<size_t, void*>> payouts;
+	};
+
+	class CHAOS_API UnlockedPoolAllocator : public Allocator
+	{
+	public:
+		UnlockedPoolAllocator();
+		~UnlockedPoolAllocator();
+
+		virtual void* FastMalloc(size_t size) override;
+		virtual void FastFree(void* ptr) override;
+
+		void SetSizeCompareRatio(float scr);
+		__declspec(property(put = SetSizeCompareRatio)) uint size_compare_ratio;
+
+		void Clear();
+	private:
+		uint _size_compare_ratio; // 0~256
+		std::list<std::pair<size_t, void*>> budgets;
+		std::list<std::pair<size_t, void*>> payouts;
+	};
 }

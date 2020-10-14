@@ -19,6 +19,18 @@
     <Filter Include="Source Files\core">
       <UniqueIdentifier>{f1ba7a1e-4a3a-484f-82c4-53584bf00401}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\math">
+      <UniqueIdentifier>{169622d7-8567-4688-8d02-ca70d1cc3ad2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\math">
+      <UniqueIdentifier>{6b2cc3eb-0b87-4e75-95fa-a9c0cebcb235}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\dnn">
+      <UniqueIdentifier>{6bab1e77-2e12-4f89-a6bd-4547b3cd4889}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\dnn">
+      <UniqueIdentifier>{317ae037-7fdc-4404-a8b9-a63cf8c1a43b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\core.hpp">
@@ -36,6 +48,18 @@
     <ClInclude Include="include\core\file.hpp">
       <Filter>Header Files\core</Filter>
     </ClInclude>
+    <ClInclude Include="include\core\tensor.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\vec.hpp">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\math\tensor_op.hpp">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="include\math\base.hpp">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\core.cpp">
@@ -46,6 +70,18 @@
     </ClCompile>
     <ClCompile Include="src\core\file.cpp">
       <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\allocator.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\tensor.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\math\tensor_op.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="src\math\lapack.cpp">
+      <Filter>Source Files\math</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

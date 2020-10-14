@@ -1,8 +1,10 @@
 #pragma once
 
 #include <vector>
+#include <list>
 #include <string>
 #include <iostream>
+#include <mutex>
 
 #ifdef CHAOS_EXPORT
 #define CHAOS_API __declspec(dllexport)
@@ -21,6 +23,23 @@ namespace chaos
 	using int64 = __int64;
 	using uint64 = unsigned __int64;
 
+	enum class Depth
+	{
+		D1 = 1,
+		D2 = 2,
+		D4 = 4,
+		D8 = 8,
+	};
+
+	enum class Packing
+	{
+		CHW = 1,
+		C2HW2 = 2, // complex
+		C3HW3 = 3,
+		C4HW4 = 4,
+		C8HW8 = 8,
+	};
+
 	enum class LogSeverity
 	{
 		INFO,
@@ -28,6 +47,27 @@ namespace chaos
 		ERROR,
 		FATAL,
 	};
+
+	template<class Type>
+	inline Type operator*(Type lhs, const Depth& rhs)
+	{
+		return lhs * static_cast<Type>(rhs);
+	}
+	template<class Type>
+	inline Type operator*(Type lhs, const Packing& rhs)
+	{
+		return lhs * static_cast<Type>(rhs);
+	}
+	template<class Type>
+	inline Type operator/(Type lhs, const Depth& rhs)
+	{
+		return lhs / static_cast<Type>(rhs);
+	}
+	template<class Type>
+	inline Type operator/(Type lhs, const Packing& rhs)
+	{
+		return lhs / static_cast<Type>(rhs);
+	}
 }
 
 #define CHAOS_PREDICT_BRANCH_NOT_TAKEN(x) x
