@@ -1,4 +1,3 @@
-#include "core/simd.hpp"
 #include "math/base.hpp"
 
 namespace chaos
