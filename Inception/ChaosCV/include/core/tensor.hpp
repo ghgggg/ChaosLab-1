@@ -21,7 +21,8 @@ namespace chaos
 		void Create(const Shape& _shape, const Depth& _depth, const Packing& _packing, Allocator* _allocator);
 
 		//void CopyTo(Tensor& t) const;
-		void CopyTo(const OutputArray& arr) const;
+		void CopyTo(const OutputArray& arr, Allocator* allocator = nullptr) const;
+		Tensor Clone(Allocator* allocator = nullptr) const;
 
 		/// <summary>Release the tensor, ref_cnt--</summary>
 		void Release();
@@ -62,6 +63,7 @@ namespace chaos
 			NONE,
 			VEC,
 			TENSOR,
+			VECTOR_TENSOR,
 		};
 
 		InputArray();
@@ -86,6 +88,7 @@ namespace chaos
 		bool Needed() const;
 		void Create(const Shape& shape, const Depth& depth, const Packing& packing, Allocator* allocator = nullptr) const;
 		void Release() const;
+		Tensor& GetTensorRef() const;
 	};
 
 	class CHAOS_API InputOutputArray : public OutputArray

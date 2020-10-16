@@ -1,16 +1,72 @@
 #include "math/base.hpp"
-//#include "math/tensor_op.hpp"
+#include "math/tensor_op.hpp"
+
+#include "dnn/layer.hpp"
+#include "dnn/layer_factory.hpp"
+
+#include "dnn/layers/binary_op.hpp"
 
 namespace chaos
 {
-    
+    void Add(const InputArray& _a, const InputArray& _b, const OutputArray& _c)
+    {
+        auto layer = dnn::LayerRegistry::CreateLayer("BinaryOp");
+
+        layer->Set("Op", (int)dnn::BinaryOp::ADD);
+
+        Tensor a = _a.GetTensor();
+        Tensor b = _b.GetTensor();
+
+        std::vector<Tensor> tops(1);
+        layer->Forward({ a, b }, tops, dnn::Option());
+        _c.GetTensorRef() = tops[0];
+    }
+    void Sub(const InputArray& _a, const InputArray& _b, const OutputArray& _c)
+    {
+        auto layer = dnn::LayerRegistry::CreateLayer("BinaryOp");
+
+        layer->Set("Op", dnn::BinaryOp::SUB);
+
+        Tensor a = _a.GetTensor();
+        Tensor b = _b.GetTensor();
+
+        std::vector<Tensor> tops(1);
+        layer->Forward({ a, b }, tops, dnn::Option());
+        _c.GetTensorRef() = tops[0];
+    }
+    void Mul(const InputArray& _a, const InputArray& _b, const OutputArray& _c)
+    {
+        auto layer = dnn::LayerRegistry::CreateLayer("BinaryOp");
+
+        layer->Set("Op", dnn::BinaryOp::MUL);
+
+        Tensor a = _a.GetTensor();
+        Tensor b = _b.GetTensor();
+
+        std::vector<Tensor> tops(1);
+        layer->Forward({ a, b }, tops, dnn::Option());
+        _c.GetTensorRef() = tops[0];
+    }
+    void Div(const InputArray& _a, const InputArray& _b, const OutputArray& _c)
+    {
+        auto layer = dnn::LayerRegistry::CreateLayer("BinaryOp");
+
+        layer->Set("Op", dnn::BinaryOp::DIV);
+
+        Tensor a = _a.GetTensor();
+        Tensor b = _b.GetTensor();
+
+        std::vector<Tensor> tops(1);
+        layer->Forward({ a, b }, tops, dnn::Option());
+        _c.GetTensorRef() = tops[0];
+    }
 
     //////////////////////////////////////// set identity ////////////////////////////////////////////
     void SetIdentity(const InputOutputArray& _src, double val)
     {
         Tensor src = _src.GetTensor();
         //CHECK_EQ(tensor.shape.size(), 2) << "just support 2D tensor";
-        int rows = src.shape[0], cols = src.steps[0] / src.depth / src.packing;
+        int rows = src.shape[0], cols = src.steps[0] / (1 * src.depth * src.packing);
 
         if (Depth::D4 == src.depth)
         {

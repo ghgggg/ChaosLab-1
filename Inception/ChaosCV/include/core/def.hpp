@@ -58,16 +58,16 @@ namespace chaos
 	{
 		return lhs * static_cast<Type>(rhs);
 	}
-	template<class Type>
-	inline Type operator/(Type lhs, const Depth& rhs)
-	{
-		return lhs / static_cast<Type>(rhs);
-	}
-	template<class Type>
-	inline Type operator/(Type lhs, const Packing& rhs)
-	{
-		return lhs / static_cast<Type>(rhs);
-	}
+	//template<class Type>
+	//inline Type operator/(Type lhs, const Depth& rhs)
+	//{
+	//	return lhs / static_cast<Type>(rhs);
+	//}
+	//template<class Type>
+	//inline Type operator/(Type lhs, const Packing& rhs)
+	//{
+	//	return lhs / static_cast<Type>(rhs);
+	//}
 }
 
 #define CHAOS_PREDICT_BRANCH_NOT_TAKEN(x) x

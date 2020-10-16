@@ -170,6 +170,12 @@
     <ClInclude Include="include\core\log.hpp" />
     <ClInclude Include="include\core\tensor.hpp" />
     <ClInclude Include="include\core\vec.hpp" />
+    <ClInclude Include="include\dnn\layer.hpp" />
+    <ClInclude Include="include\dnn\layers\binary_op.hpp" />
+    <ClInclude Include="include\dnn\layer_factory.hpp" />
+    <ClInclude Include="include\dnn\model.hpp" />
+    <ClInclude Include="include\dnn\net.hpp" />
+    <ClInclude Include="include\dnn\option.hpp" />
     <ClInclude Include="include\math\base.hpp" />
     <ClInclude Include="include\math\tensor_op.hpp" />
   </ItemGroup>
@@ -179,6 +185,11 @@
     <ClCompile Include="src\core\file.cpp" />
     <ClCompile Include="src\core\log.cpp" />
     <ClCompile Include="src\core\tensor.cpp" />
+    <ClCompile Include="src\dnn\layer.cpp" />
+    <ClCompile Include="src\dnn\layers\binary_op.cpp" />
+    <ClCompile Include="src\dnn\layer_declaration.cpp" />
+    <ClCompile Include="src\dnn\layer_factory.cpp" />
+    <ClCompile Include="src\dnn\model.cpp" />
     <ClCompile Include="src\math\lapack.cpp" />
     <ClCompile Include="src\math\tensor_op.cpp" />
   </ItemGroup>

@@ -84,7 +84,7 @@ namespace chaos
 		ref_cnt = nullptr;
 	}
 
-	void Tensor::CopyTo(const OutputArray& arr) const
+	void Tensor::CopyTo(const OutputArray& arr, Allocator* allocator) const
 	{
 		arr.Create(shape, depth, packing, allocator);
 		Tensor t = arr.GetTensor();
@@ -112,6 +112,12 @@ namespace chaos
 				memcpy((uchar*)t + r * rstep, (uchar*)data + offset, len);
 			}
 		}
+	}
+	Tensor Tensor::Clone(Allocator* allocator) const
+	{
+		Tensor t;
+		CopyTo(t, allocator);
+		return t;
 	}
 	//void Tensor::CopyTo(Tensor& t) const
 	//{
@@ -152,6 +158,27 @@ namespace chaos
 		LOG(FATAL) << "unknown/unsupported array type";
 		return Tensor();
 	}
+	//void InputArray::GetVectorTensor(std::vector<Tensor>& mv) const
+	//{
+	//	if (flag == TENSOR)
+	//	{
+	//		const Tensor& t = *(Tensor*)obj;
+	//		mv.emplace_back(t);
+	//		//mv.resize(1);
+	//		//mv[0] = t;
+	//		return;
+	//	}
+	//	if (flag == VECTOR_TENSOR)
+	//	{
+	//		const std::vector<Tensor>& data = *(std::vector<Tensor>*)obj;
+	//		size_t n = data.size();
+	//		mv.resize(n);
+	//		for (size_t i = 0; i < n; i++)
+	//			mv[i] = data[i];
+	//		return;
+	//	}
+	//	LOG(FATAL) << "unknown/unsupported array type";
+	//}
 	bool InputArray::IsTensor() const { return flag == TENSOR; }
 	void InputArray::Init(int _flag, const void* _obj)
 	{
@@ -188,6 +215,15 @@ namespace chaos
 	bool OutputArray::Needed() const
 	{
 		return flag != NONE;
+	}
+	Tensor& OutputArray::GetTensorRef() const
+	{
+		if (flag == TENSOR)
+		{
+			return *(Tensor*)obj;
+		}
+		LOG(FATAL) << "unknown/unsupported array type";
+		return *(Tensor*)obj; // warning C4715
 	}
 	
 

@@ -36,4 +36,6 @@ namespace chaos
 		if (t == nullptr) LogMessage(file, line, message, LogSeverity::FATAL);
 		return std::forward<Type>(t);
 	}
+
+	CHAOS_API std::ostream& operator<<(std::ostream& stream, const std::vector<std::string>& list);
 }

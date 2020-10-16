@@ -77,4 +77,13 @@ namespace chaos
 		}
 		mtx.unlock();
 	}
+
+	std::ostream& operator<<(std::ostream& stream, const std::vector<std::string>& list)
+	{
+		for (size_t i = 0; i < list.size(); i++)
+		{
+			stream << Format(",%s" + !i, list[i].data());
+		}
+		return stream;
+	}
 }

@@ -31,6 +31,12 @@
     <Filter Include="Source Files\dnn">
       <UniqueIdentifier>{317ae037-7fdc-4404-a8b9-a63cf8c1a43b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\dnn\layers">
+      <UniqueIdentifier>{6d994837-7f41-4bdb-844d-2027d441c6e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\dnn\layers">
+      <UniqueIdentifier>{325eb4c5-9361-4062-bff7-ee2780bc214e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\core.hpp">
@@ -60,6 +66,24 @@
     <ClInclude Include="include\math\base.hpp">
       <Filter>Header Files\math</Filter>
     </ClInclude>
+    <ClInclude Include="include\dnn\layer.hpp">
+      <Filter>Header Files\dnn</Filter>
+    </ClInclude>
+    <ClInclude Include="include\dnn\net.hpp">
+      <Filter>Header Files\dnn</Filter>
+    </ClInclude>
+    <ClInclude Include="include\dnn\option.hpp">
+      <Filter>Header Files\dnn</Filter>
+    </ClInclude>
+    <ClInclude Include="include\dnn\layers\binary_op.hpp">
+      <Filter>Header Files\dnn\layers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\dnn\layer_factory.hpp">
+      <Filter>Header Files\dnn</Filter>
+    </ClInclude>
+    <ClInclude Include="include\dnn\model.hpp">
+      <Filter>Header Files\dnn</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\core.cpp">
@@ -82,6 +106,21 @@
     </ClCompile>
     <ClCompile Include="src\math\lapack.cpp">
       <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dnn\layer.cpp">
+      <Filter>Source Files\dnn</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dnn\layers\binary_op.cpp">
+      <Filter>Source Files\dnn\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dnn\layer_factory.cpp">
+      <Filter>Source Files\dnn</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dnn\layer_declaration.cpp">
+      <Filter>Source Files\dnn</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dnn\model.cpp">
+      <Filter>Source Files\dnn</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

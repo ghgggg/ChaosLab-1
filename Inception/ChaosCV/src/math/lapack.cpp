@@ -347,6 +347,8 @@ namespace chaos
         vx_cleanup();
         return k;
 #endif
+        if (n < 4)
+            return 0;
         int k = 0;
         for (; k <= n - 4; k += 4)
         {
@@ -660,8 +662,7 @@ namespace chaos
         }
     }
 
-    static void
-        SVBkSb(int m, int n, const float* w, size_t wstep,
+    static void SVBkSb(int m, int n, const float* w, size_t wstep,
             const float* u, size_t ustep, bool uT,
             const float* v, size_t vstep, bool vT,
             const float* b, size_t bstep, int nb,

@@ -9,6 +9,9 @@
 
 namespace chaos
 {
+	template<class Type>
+	using Ptr = std::shared_ptr<Type>;
+
 	/// <summary>Split the string data by delimiter</summary>
 	CHAOS_API std::vector<std::string> Split(const std::string& data, const std::string& delimiter);
 
