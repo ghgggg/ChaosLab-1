@@ -11,7 +11,7 @@ namespace chaos
 	Tensor::Tensor(const Shape& _shape, const Depth& _depth, const Packing& _packing, void* _data, const Steps& _steps)
 		: data(_data), shape(_shape), depth(_depth), packing(_packing) 
 	{
-		steps = _steps.empty() ? Steps(shape, 1 * depth * packing) : _steps;
+		steps = _steps.empty() ? shape.steps() : _steps;
 		CHECK_EQ(steps.size(), shape.size());
 	}
 
@@ -53,7 +53,7 @@ namespace chaos
 		packing = _packing;
 		allocator = _allocator;
 
-		steps = Steps(shape, 1 * depth * packing);
+		steps = _shape.steps(); //Steps(shape, 1 * depth * packing);
 
 		size_t total = (size_t)steps[0] * shape[0];
 		if (total > 0)
@@ -89,27 +89,29 @@ namespace chaos
 		arr.Create(shape, depth, packing, allocator);
 		Tensor t = arr.GetTensor();
 
-		//if (t.empty()) t.Create(shape, depth, packing, allocator);
+		size_t elem_size = 1 * depth * packing;
 		if (IsContinue() && t.IsContinue())
 		{
-			memcpy(t.data, data, (size_t)shape[0] * steps[0]);
+			memcpy(t.data, data, (size_t)shape[0] * steps[0] * elem_size);
 		}
 		else
 		{
 			size_t dims = shape.size();
 			size_t rows = shape.vol() / shape.back();
-			size_t rstep = t.steps[dims - 2];
-			size_t len = shape.back() * depth * packing; // row lenth
+			size_t len = shape[dims - 1] * elem_size; // row len
 			for (size_t r = 0; r < rows; r++)
 			{
-				size_t offset = 0;
-				size_t row = r * rstep;
-				for (int j = 0; j < shape.size() - 1; j++)
+				size_t dst_offset = 0;
+				size_t src_offset = 0;
+				size_t idx = r * shape[dims - 1];
+				for (int64 j = dims - 1; j >= 0; j--)
 				{
-					offset += (row / t.steps[j]) * steps[j];
-					row %= t.steps[j];
+					size_t k = idx % shape[j];
+					dst_offset += k * t.steps[j];
+					src_offset += k * steps[j];
+					idx /= shape[j];
 				}
-				memcpy((uchar*)t + r * rstep, (uchar*)data + offset, len);
+				memcpy((uchar*)t + dst_offset * elem_size, (uchar*)data + src_offset * elem_size, len);
 			}
 		}
 	}

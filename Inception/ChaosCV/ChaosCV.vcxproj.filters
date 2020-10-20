@@ -84,6 +84,9 @@
     <ClInclude Include="include\dnn\model.hpp">
       <Filter>Header Files\dnn</Filter>
     </ClInclude>
+    <ClInclude Include="include\dnn\layers\innerproduct.hpp">
+      <Filter>Header Files\dnn\layers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\core.cpp">

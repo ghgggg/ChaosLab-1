@@ -8,69 +8,133 @@ namespace chaos
 {
 	template<class Type> class VecConstIterator;
 	template<class Type, std::enable_if_t<std::is_arithmetic_v<Type>, bool> = true>
-	class Vec : public AutoBuffer<Type, 8>
+	class Vec
 	{
 	public:
-		using Buffer = AutoBuffer<Type, 8>;
 		using ConstIterator = VecConstIterator<Type>;
+		Vec() = default;
+		
+		virtual ~Vec() { Deallocate(); }
 
-		Vec() : Buffer(0) {}
-		virtual ~Vec() = default;
-
-		template<class Tp, std::enable_if_t<std::is_convertible_v<Tp, Type>, bool> = true>
-		Vec(const std::initializer_list<Tp>& list) : Buffer(list.size())
+		template<class Tp, std::enable_if_t<std::is_convertible_v<Tp,Type>, bool> = true>
+		Vec(const std::initializer_list<Tp>& list)
 		{
-			const Tp* data = list.begin();
-			for (size_t i = 0; i < list.size(); i++)
+			Allocate(list.size());
+			size_t i = 0;
+			for (const auto& elem : list)
 			{
-				ptr[i] = static_cast<Type>(data[i]);
+				buf[i++] = static_cast<Type>(elem);
 			}
 		}
 
-		template<class Tp, std::enable_if_t<std::is_convertible_v<Tp, Type>, bool> = true>
-		Vec(size_t size, const Tp* data) : Buffer(size)
+		Vec(size_t size, const Type* ptr)
 		{
-			for (size_t i = 0; data && i < size; i++)
-			{
-				ptr[i] = static_cast<Type>(data[i]);
-			}
-		}
-
-		template<class Tp, std::enable_if_t<std::is_convertible_v<Type, Tp>, bool> = true>
-		operator std::vector<Tp>() const
-		{
-			std::vector<Tp> data;
-			data.reserve(sz);
+			Allocate(size);
 			for (size_t i = 0; i < sz; i++)
 			{
-				data.emplace_back(ptr[i]);
+				buf[i] = ptr[i];
 			}
-			return data;
 		}
+
+		Vec(const Vec& v)
+		{
+			Allocate(v.size());
+			for (size_t i = 0; i < sz; i++)
+			{
+				buf[i] = v[i];
+			}
+		}
+		const Vec& operator=(const Vec& v)
+		{
+			if (this == &v)
+			{
+				return *this;
+			}
+
+			Deallocate();
+			Allocate(v.size());
+			for (size_t i = 0; i < sz; i++)
+			{
+				buf[i] = v[i];
+			}
+			return *this;
+		}
+
+		void Resize(size_t size)
+		{
+			if (size < sz)
+				return;
+
+			size_t prev_size = sz;
+			Type* prev_buf = buf;
+
+			buf = new Type[size];
+			sz = size;
+
+			size_t i = 0;
+			for (; i < prev_size; i++)
+			{
+				buf[i] = prev_buf[i];
+			}
+			for (; i < size; i++)
+				buf[i] = Type();
+
+			delete[] prev_buf;
+		}
+
+		void Allocate(size_t size)
+		{
+			if (size <= sz)
+			{
+				sz = size;
+				return;
+			}
+			Deallocate();
+			sz = size;
+			buf = new Type[size];
+		}
+
+		void Deallocate()
+		{
+			if (buf) delete[] buf;
+			sz = 0;
+		}
+
+		template<class Tp, std::enable_if_t<std::is_convertible_v<Type, Tp>, bool> =  true>
+		operator std::vector<Tp>() const
+		{
+			std::vector<Tp> vec(sz);
+			for (size_t i = 0; i < sz; i++) vec[i] = static_cast<Tp>(buf[i]);
+			return vec;
+		}
+
+		inline size_t size() const noexcept { return sz; }
+		inline const Type& operator[](size_t i) const { CHECK_LT(i, sz) << "out of range"; return buf[i]; }
+		inline Type& operator[](size_t i) { CHECK_LT(i, sz) << "out of range"; return buf[i]; }
+		inline const Type* data() const noexcept { return buf; }
+		inline Type* data() noexcept { return buf; }
+		inline const Type& back() const noexcept { return buf[sz-1]; }
+		inline Type& back() noexcept { return buf[sz - 1]; }
 
 		ConstIterator begin() const { return ConstIterator(*this); }
 		ConstIterator end() const { return ConstIterator(*this) + sz; }
 
-		bool empty() const noexcept { return sz == 0 || ptr == nullptr; }
+		bool empty() const noexcept { return sz == 0 || buf == nullptr; }
 
-		const Type& back() const { return ptr[sz - 1]; }
-		Type& back() { return ptr[sz - 1]; }
-
-		friend std::ostream& operator<<(std::ostream& stream, const Vec<Type>& vec)
+		friend std::ostream& operator<<(std::ostream& stream, const Vec& v)
 		{
 			stream << "[";
-			for (int i = 0; i < vec.sz; i++)
+			for (int i = 0; i < v.sz; i++)
 			{
-				stream << Format(",%d" + !i, vec[i]);
+				stream << Format(",%d" + !i, v[i]);
 			}
 			return stream << "]";
 		}
 
 	protected:
-		using Buffer::sz;
-		using Buffer::ptr;
+		Type* buf = nullptr;
+		size_t sz = 0;
 	};
-
 
 	template<class Type>
 	class VecConstIterator : public std::iterator_traits<Type*>
@@ -105,19 +169,53 @@ namespace chaos
 		friend Vec<Type>;
 	};
 
-	class CHAOS_API Shape : public Vec<uint>
+
+	class Steps : public Vec<uint>
 	{
 	public:
 		using Vec<uint>::Vec;
 
-		Shape(uint w) : Vec({w}) {}
-		Shape(uint h, uint w) : Vec({ h, w }) {}
-		Shape(uint c, uint h, uint w) : Vec({ c, h ,w }) {}
-		Shape(uint n, uint c, uint h, uint w) : Vec({n, c, h, w}) {}
+		Steps(size_t sz) { Allocate(sz); }
+	};
 
-		~Shape() {}
+	class Shape : public Vec<uint>
+	{
+	public:
+		using Vec<uint>::Vec;
+
+		Shape(uint w) 
+		{ 
+			Allocate(1); 
+			buf[0] = w; 
+		}
+		Shape(uint h, uint w) 
+		{
+			Allocate(2); 
+			buf[0] = h; buf[1] = w;
+		}
+		Shape(uint c, uint h, uint w) 
+		{ 
+			Allocate(3); 
+			buf[0] = c; buf[1] = h; buf[2] = w;
+		}
+		Shape(uint n, uint c, uint h, uint w) 
+		{ 
+			Allocate(4); 
+			buf[0] = n; buf[1] = c; buf[2] = h; buf[3] = w;
+		}
 
 		size_t vol() const noexcept { return std::accumulate(begin(), end(), 1, std::multiplies<uint>()); }
+
+		Steps steps() const noexcept
+		{
+			Steps _steps(sz);
+			_steps[sz - 1] = 1;
+			for (int64 i = sz - 2; i >= 0; i--)
+			{
+				_steps[i] = buf[i + 1] * _steps[i + 1];
+			}
+			return _steps;
+		}
 
 		template<class Tp, std::enable_if_t<std::is_convertible_v<Tp, uint>, bool> = true>
 		void Insert(size_t pos, const Tp& val)
@@ -126,24 +224,24 @@ namespace chaos
 			{
 				size_t rest = sz - pos; // rest < vec.size
 				Resize(sz + 1);
-				memmove(ptr + pos + 1, ptr + pos, rest * sizeof(uint));
-				ptr[pos] = val;
+				memmove(buf + pos + 1, buf + pos, rest * sizeof(uint));
+				buf[pos] = val;
 			}
 			else
 			{
 				Resize(pos + 1);
-				ptr[pos] = val;
+				buf[pos] = val;
 			}
 		}
 		void Remove(size_t pos)
 		{
 			CHECK_LT(pos, sz) << "out of range";
 			size_t rest = sz - pos;
-			memmove(ptr + pos, ptr + pos + 1, rest * sizeof(uint));
+			memmove(buf + pos, buf + pos + 1, rest * sizeof(uint));
 			Resize(sz - 1);
 		}
 
-		friend bool operator==(const Shape& lhs, const Shape& rhs)
+		friend bool operator==(const Shape& lhs, const Shape& rhs) noexcept
 		{
 			if (lhs.size() != rhs.size()) return false;
 			for (size_t i = 0; i < lhs.size(); i++)
@@ -154,39 +252,4 @@ namespace chaos
 		}
 	};
 
-	class CHAOS_API Steps : public Vec<uint> // to save steps for shape
-	{
-	public:
-		using Vec<uint>::Vec;
-
-		Steps(const Shape& shape, uint elem_size)
-		{
-			Allocate(shape.size());
-			ptr[sz - 1] = elem_size;
-			for (int64 i = shape.size() - 2; i >= 0; i--)
-			{
-				ptr[i] = shape[i + 1] * ptr[i + 1];
-			}
-		}
-
-		~Steps() {};
-	};
-
-	class CHAOS_API Point : Vec<float>
-	{
-	public:
-		Point(float x, float y) : Vec({ x, y }) {}
-
-		__declspec(property(get = GetX)) float x;
-		float GetX() const
-		{
-			return ptr[0];
-		}
-
-		__declspec(property(get = GetY)) float y;
-		float GetY() const
-		{
-			return ptr[1];
-		}
-	};
 }

@@ -57,8 +57,8 @@ namespace chaos
                     for (int64 j = num_axes - 1; j >= 0; j--)
                     {
                         size_t k = idx % shape[j];
-                        a_idx += (k >= a.shape[j] ? 0 : k) * a.steps[j] / (1 * a.depth);
-                        b_idx += (k >= b.shape[j] ? 0 : k) * b.steps[j] / (1 * b.depth);
+                        a_idx += (k >= a.shape[j] ? 0 : k) * a.steps[j];
+                        b_idx += (k >= b.shape[j] ? 0 : k) * b.steps[j];
                         idx /= shape[j];
                     }
                     c[i] = op(a[a_idx], b[b_idx]);

@@ -7,8 +7,8 @@ namespace chaos
     {
         int i, j, k;
         bool p = true;
-        astep /= sizeof(A[0]);
-        bstep /= sizeof(b[0]);
+        //astep /= sizeof(A[0]);
+        //bstep /= sizeof(b[0]);
 
         for (i = 0; i < m; i++)
         {
@@ -67,8 +67,8 @@ namespace chaos
         Type* L = A;
         int i, j, k;
         double s;
-        astep /= sizeof(A[0]);
-        bstep /= sizeof(b[0]);
+        //astep /= sizeof(A[0]);
+        //bstep /= sizeof(b[0]);
 
         for (i = 0; i < m; i++)
         {
@@ -319,11 +319,11 @@ namespace chaos
         size_t esz = 1 * src.depth, astep = AlignSize(n * esz, 16);
         AutoBuffer<uchar> buf(n * astep + n * 5LL * esz + 32);
         uchar* ptr = AlignPtr(buf.data(), 16);
-        Tensor a({ n, n }, src.depth, src.packing, ptr, { astep,  esz }), w({ n, 1 }, src.depth, src.packing, ptr + astep * n);
+        Tensor a({ n, n }, src.depth, src.packing, ptr, { astep / esz,  1ULL }), w({ n, 1 }, src.depth, src.packing, ptr + astep * n);
         ptr += astep * n + esz * n;
         src.CopyTo(a);
 
-        bool ok = JacobiImpl<float>(a, astep, w, v, v.steps[0], n, ptr);
+        bool ok = JacobiImpl<float>(a, astep, w, v, v.steps[0] * esz, n, ptr);
         w.CopyTo(_evals);
         return ok;
     }
@@ -700,20 +700,20 @@ namespace chaos
             std::swap(m, n);
             at = true;
         }
-
+        
         int urows = full_uv ? m : n;
         size_t esz = 1 * src.depth, astep = AlignSize(m * esz, 16), vstep = AlignSize(n * esz, 16);
         AutoBuffer<uchar> _buf(urows * astep + n * vstep + n * esz + 32);
         uchar* buf = AlignPtr(_buf.data(), 16);
-        Tensor temp_a(Shape(n, m), Depth::D4, Packing::CHW, buf, { astep, esz });
+        Tensor temp_a(Shape(n, m), Depth::D4, Packing::CHW, buf, { astep / esz, 1ULL });
         Tensor temp_w(Shape(n, 1), Depth::D4, Packing::CHW, buf + urows * astep);
-        Tensor temp_u(Shape(urows, m), Depth::D4, Packing::CHW, buf, { astep, esz }), temp_v;
+        Tensor temp_u(Shape(urows, m), Depth::D4, Packing::CHW, buf, { astep / esz, 1ULL }), temp_v;
 
         if (compute_uv)
-            temp_v = Tensor(Shape(n, n), Depth::D4, Packing::CHW, AlignPtr(buf + urows * astep + n * esz, 16), { vstep, esz });
+            temp_v = Tensor(Shape(n, n), Depth::D4, Packing::CHW, AlignPtr(buf + urows * astep + n * esz, 16), { vstep / esz, 1ULL });
 
         if (urows > n)
-            memset(temp_u, 0, (size_t)temp_u.shape[0] * temp_u.steps[0]);
+            memset(temp_u, 0, esz * temp_u.shape[0] * temp_u.steps[0]);
             //temp_u = Scalar::all(0);
 
         if (!at)
@@ -721,7 +721,7 @@ namespace chaos
         else
             src.CopyTo(temp_a);
 
-        JacobiSVD(temp_a, temp_u.steps[0], temp_w,
+        JacobiSVD(temp_a, astep, temp_w,
             temp_v, vstep, m, n, compute_uv ? urows : 0);
 
         temp_w.CopyTo(_w);
@@ -755,8 +755,8 @@ namespace chaos
         auto packing = w.packing;
         auto allocator = w.allocator;
 
-        uint m = u.shape[0], n = vt.shape[1], nb = rhs.empty() ? rhs.shape[1] : m, nm = std::min(m, n);
-        size_t wstep = w.shape[0] == 1 ? (size_t)esz : w.shape[1] == 1 ? (size_t)w.steps[0] : (size_t)w.steps[0] + esz;
+        uint m = u.shape[0], n = vt.shape[1], nb = rhs.empty() ? m : rhs.shape[1], nm = std::min(m, n);
+        size_t wstep = w.shape[0] == 1 ? (size_t)esz : w.shape[1] == 1 ? (size_t)w.steps[0] * esz : (size_t)w.steps[0] * esz + esz;
         AutoBuffer<uchar> buffer(nb * sizeof(double) + 16);
 
         CHECK(w.depth == u.depth && u.depth == vt.depth && u.data && vt.data && w.data);
@@ -767,9 +767,9 @@ namespace chaos
         _dst.Create({ n, nb }, depth, packing, allocator);
         Tensor dst = _dst.GetTensor();
 
-        SVBkSb(m, n, w, wstep, u, u.steps[0], false,
-            vt, vt.steps[0], true, rhs, rhs.empty() ? 0 : rhs.steps[0], nb,
-            dst, dst.steps[0], buffer.data());
+        SVBkSb(m, n, w, wstep, u, u.steps[0] * esz, false,
+            vt, vt.steps[0] * esz, true, rhs, rhs.empty() ? 0 : rhs.steps[0] * esz, nb,
+            dst, dst.steps[0] * esz, buffer.data());
     }
 
     bool Invert(const InputArray& _src, const OutputArray& _dst, int method)
@@ -827,8 +827,8 @@ namespace chaos
             bool result = false;
             const uchar* srcdata = src;
             uchar* dstdata = dst;
-            size_t srcstep = src.steps[0];
-            size_t dststep = dst.steps[0];
+            size_t srcstep = src.steps[0] * esz;
+            size_t dststep = dst.steps[0] * esz;
 
             auto Sf = [=](int y, int x)->const float& { return ((float*)(srcdata + y * srcstep))[x]; };
             auto Df = [=](int y, int x)->float& { return ((float*)(dstdata + y * dststep))[x]; };

@@ -66,7 +66,7 @@ namespace chaos
     {
         Tensor src = _src.GetTensor();
         //CHECK_EQ(tensor.shape.size(), 2) << "just support 2D tensor";
-        int rows = src.shape[0], cols = src.steps[0] / (1 * src.depth * src.packing);
+        int rows = src.shape[0], cols = src.steps[0];
 
         if (Depth::D4 == src.depth)
         {
@@ -99,17 +99,17 @@ namespace chaos
     void PermuteImpl(size_t count, const Type* src, const uint*permute_order, const uint* src_shapes, const uint* src_steps, 
         const uint* dst_shapes, const uint* dst_steps, size_t num_axes, Type* dst)
     {
-        for (int i = 0; i < count; i++)
+        for (size_t i = 0; i < count; i++)
         {
-            int src_idx = 0;
-            int dst_idx = 0;
-            int idx = i;
+            size_t src_idx = 0;
+            size_t dst_idx = 0;
+            size_t idx = i;
             for (int64 j = num_axes - 1; j >= 0; j--)
             {
-                int order = permute_order[j];
-                int k = idx % dst_shapes[j];
-                dst_idx += k * (size_t)dst_steps[j] / sizeof(Type);
-                src_idx += k * (size_t)src_steps[order] / sizeof(Type);
+                size_t order = permute_order[j];
+                size_t k = idx % dst_shapes[j];
+                dst_idx += k * dst_steps[j];
+                src_idx += k * src_steps[order];
                 idx /= dst_shapes[j];
             }
             dst[dst_idx] = src[src_idx];
@@ -244,15 +244,15 @@ namespace chaos
 
         _dst.Create({ src.shape[1], src.shape[0] }, src.depth, src.packing, src.allocator);
         Tensor dst = _dst.GetTensor();
-
+        size_t esz = 1 * src.depth * src.packing;
         if (dst.data == src.data)
         {
             CHECK_EQ(dst.shape[0], dst.shape[1]);
-            TransposeInplaceImpl<float>(dst, dst.steps[0], dst.shape[0]);
+            TransposeInplaceImpl<float>(dst, dst.steps[0] * esz, dst.shape[0]);
         }
         else
         {
-            TransposeImpl<float>(src, src.steps[0], dst, dst.steps[0], src.shape[1], src.shape[0]);
+            TransposeImpl<float>(src, src.steps[0] * esz, dst, dst.steps[0] * esz, src.shape[1], src.shape[0]);
         }
     }
 
