@@ -8,3 +8,12 @@ namespace chaos
 		REGISTER_LAYER("BinaryOp", BinaryOp);
 	}
 }
+
+#include "dnn/layers/innerproduct.hpp"
+namespace chaos
+{
+	namespace dnn
+	{
+		REGISTER_LAYER("InnerProduct", InnerProduct);
+	}
+}

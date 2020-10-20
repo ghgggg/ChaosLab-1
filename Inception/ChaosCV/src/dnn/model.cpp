@@ -17,17 +17,17 @@ namespace chaos
 		}
 		ParamValue::operator const float& () const
 		{
-			CHECK_EQ(type, INT) << "param value is not float";
+			CHECK_EQ(type, FLOAT) << "param value is not float";
 			return *(float*)obj;
 		}
 		ParamValue::operator const std::string& () const
 		{
-			CHECK_EQ(type, INT) << "param value is not string";
+			CHECK_EQ(type, STRING) << "param value is not string";
 			return *(std::string*)obj;
 		}
 		ParamValue::operator const Tensor& () const
 		{
-			CHECK_EQ(type, INT) << "param value is not tensor";
+			CHECK_EQ(type, TENSOR) << "param value is not tensor";
 			return *(Tensor*)obj;
 		}
 

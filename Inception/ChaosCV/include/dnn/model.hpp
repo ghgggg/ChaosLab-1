@@ -20,6 +20,7 @@ namespace chaos
 			operator const std::string& () const;
 			operator const Tensor& () const;
 
+			~ParamValue() = default;
 		private:
 			enum
 			{

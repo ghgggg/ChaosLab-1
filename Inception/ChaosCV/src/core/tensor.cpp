@@ -90,7 +90,7 @@ namespace chaos
 		Tensor t = arr.GetTensor();
 
 		size_t elem_size = 1 * depth * packing;
-		if (IsContinue() && t.IsContinue())
+		if (continua() && t.continua())
 		{
 			memcpy(t.data, data, (size_t)shape[0] * steps[0] * elem_size);
 		}
@@ -121,33 +121,6 @@ namespace chaos
 		CopyTo(t, allocator);
 		return t;
 	}
-	//void Tensor::CopyTo(Tensor& t) const
-	//{
-	//	if (t.empty()) t.Create(shape, depth, packing, allocator);
-	//	if (IsContinue() && t.IsContinue())
-	//	{
-	//		memcpy(t.data, data, (size_t)shape[0] * steps[0]);
-	//	}
-	//	else
-	//	{
-	//		size_t dims = shape.size();
-	//		size_t rows = shape.vol() / shape.back();
-	//		size_t rstep = t.steps[dims - 2];
-	//		size_t len = shape.back() * depth * packing; // row lenth
-	//		for (size_t r = 0; r < rows; r++)
-	//		{
-	//			size_t offset = 0;
-	//			size_t row = r * rstep;
-	//			for (int j = 0; j < shape.size() - 1; j++)
-	//			{
-	//				offset += (row / t.steps[j]) * steps[j];
-	//				row %= t.steps[j];
-	//			}
-	//			memcpy((uchar*)t + r * rstep, (uchar*)data + offset, len);
-	//		}
-	//	}
-	//}
-
 
 	InputArray::InputArray() { Init(NONE, nullptr); }
 	InputArray::InputArray(const Tensor& data) { Init(TENSOR, &data); }

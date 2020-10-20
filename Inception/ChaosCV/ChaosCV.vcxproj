@@ -186,6 +186,7 @@
     <ClCompile Include="src\core\file.cpp" />
     <ClCompile Include="src\core\log.cpp" />
     <ClCompile Include="src\core\tensor.cpp" />
+    <ClCompile Include="src\dbb\layers\innerproduct.cpp" />
     <ClCompile Include="src\dnn\layer.cpp" />
     <ClCompile Include="src\dnn\layers\binary_op.cpp" />
     <ClCompile Include="src\dnn\layer_declaration.cpp" />

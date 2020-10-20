@@ -18,6 +18,16 @@ namespace chaos
 		Tensor(const Tensor& t);
 		Tensor& operator=(const Tensor& t);
 
+		template<class Type>
+		Tensor(const Vec<Type>& vec)
+		{
+			Create({ vec.size() }, Depth((int)sizeof(Type)), Packing::CHW, nullptr);
+			for (size_t i = 0; i < vec.size(); i++)
+			{
+				((Type*)data)[i] = vec[i];
+			}
+		}
+
 		void Create(const Shape& _shape, const Depth& _depth, const Packing& _packing, Allocator* _allocator);
 
 		//void CopyTo(Tensor& t) const;
@@ -28,7 +38,7 @@ namespace chaos
 		void Release();
 
 		bool empty() const noexcept { return data == nullptr || shape.vol() == 0; }
-		bool IsContinue() const noexcept { return shape.vol() == ((size_t)shape[0] * steps[0]); }
+		bool continua() const noexcept { return shape.vol() == ((size_t)shape[0] * steps[0]); }
 
 		/// <summary>ref_cnt++</summary>
 		void AddRef() noexcept { if(ref_cnt) CHAOS_XADD(ref_cnt, 1); }

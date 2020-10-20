@@ -20,4 +20,6 @@ namespace chaos
 	//CHAOS_API void Permute(const Tensor& src, Tensor& dst, const Vec<uint>& orders);
 
 	CHAOS_API void Permute(const InputArray& src, const OutputArray& dst, const Vec<uint>& orders);
+
+	CHAOS_API void Flatten(const InputArray& src, const OutputArray& dst);
 }

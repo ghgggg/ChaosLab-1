@@ -125,5 +125,8 @@
     <ClCompile Include="src\dnn\model.cpp">
       <Filter>Source Files\dnn</Filter>
     </ClCompile>
+    <ClCompile Include="src\dbb\layers\innerproduct.cpp">
+      <Filter>Source Files\dnn\layers</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
