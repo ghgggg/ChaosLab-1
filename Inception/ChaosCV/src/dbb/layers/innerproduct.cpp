@@ -25,7 +25,7 @@ namespace chaos
 		{
 			size_t in_dims = bottom.shape.size();
 			uint inw = bottom.shape.back();
-			uint inh = bottom.shape.vol() / inw;
+			uint inh = (uint)bottom.shape.vol() / inw;
 			CHECK_EQ(inw, weight.shape[1]) << Format("expect %d, but got %d)", weight.shape.back(), inw);
 			
 			AutoBuffer<uint, 8> rsteps(inh); // 8 is enough for dims
@@ -39,11 +39,11 @@ namespace chaos
 					step += k * bottom.steps[j];
 					idx /= bottom.shape[j];
 				}
-				rsteps[r] = step;
+				rsteps[r] = (uint)step;
 			}
 
 			Shape out_shape = bottom.shape;
-			out_shape.back() = weight.shape[0];
+			uint outw = out_shape.back() = weight.shape[0];
 			// 这个地方对形状的推理不对
 			top.Create(out_shape, Depth::D4, Packing::CHW, opt.blob_allocator);
 			if (not bias.empty()) CHECK_EQ(top.shape, bias.shape);
@@ -51,11 +51,11 @@ namespace chaos
 			for (size_t r = 0; r < inh; r++)
 			{
 				const float* x = (const float*)bottom + rsteps[r];
-				for (size_t c = 0; c < weight.shape[0]; c++)
+				for (size_t c = 0; c < outw; c++)
 				{
 					const float* w = (const float*)weight + c * weight.steps[0];
 
-					size_t offset = r * (size_t)weight.shape[0] + c;
+					size_t offset = r * outw + c;
 					float b = bias.empty() ? 0.f : bias[offset];
 					float y = std::inner_product(x, x + inw, w, b);
 
@@ -65,11 +65,17 @@ namespace chaos
 					}
 					if (activation_type == 2)
 					{
-
+						float slope = activation_params[0];
+						y = y > 0.f ? y : y * slope;
 					}
 					if (activation_type == 3)
 					{
-
+						float min = activation_params[0];
+						float max = activation_params[1];
+						if (y < min)
+							y = min;
+						if (y > max)
+							y = max;
 					}
 					if (activation_type == 4)
 					{

@@ -4,15 +4,13 @@
 #include "dnn/layer.hpp"
 #include "dnn/layer_factory.hpp"
 
-#include "dnn/layers/binary_op.hpp"
-
 namespace chaos
 {
     void Add(const InputArray& _a, const InputArray& _b, const OutputArray& _c)
     {
         auto layer = dnn::LayerRegistry::CreateLayer("BinaryOp");
 
-        layer->Set("Op", (int)dnn::BinaryOp::ADD);
+        layer->Set("Op", dnn::BinOpType::ADD);
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();
@@ -25,7 +23,7 @@ namespace chaos
     {
         auto layer = dnn::LayerRegistry::CreateLayer("BinaryOp");
 
-        layer->Set("Op", dnn::BinaryOp::SUB);
+        layer->Set("Op", dnn::BinOpType::SUB);
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();
@@ -38,7 +36,7 @@ namespace chaos
     {
         auto layer = dnn::LayerRegistry::CreateLayer("BinaryOp");
 
-        layer->Set("Op", dnn::BinaryOp::MUL);
+        layer->Set("Op", dnn::BinOpType::MUL);
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();
@@ -51,7 +49,7 @@ namespace chaos
     {
         auto layer = dnn::LayerRegistry::CreateLayer("BinaryOp");
 
-        layer->Set("Op", dnn::BinaryOp::DIV);
+        layer->Set("Op", dnn::BinOpType::DIV);
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();

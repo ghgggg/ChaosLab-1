@@ -70,7 +70,7 @@ namespace chaos
 
         void BinaryOp::Set(const std::string& key, const ParamValue& value)
         {
-            if (key == "Op") op_type = value;
+            if (key == "op") op_type = value;
         }
 
         void BinaryOp::Forward(const std::vector<Tensor>& bottoms, std::vector<Tensor>& tops, const Option& opt) const

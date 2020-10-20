@@ -36,5 +36,23 @@ namespace chaos
 			std::vector<Shape> bottoms_shapes;
 			std::vector<Shape> tops_shapes;
 		};
+
+		enum ActiveType
+		{
+			NONE,
+			RELU,
+			LEAKYRELU,
+			CLIP,
+			SOFTMAX,
+			MISH,
+		};
+
+		enum BinOpType
+		{
+			ADD,
+			MUL,
+			SUB,
+			DIV,
+		};
 	}
 }

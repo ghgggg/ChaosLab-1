@@ -21,7 +21,7 @@ namespace chaos
 			Tensor bias;
 			// 0=none, 1=relu, 2=leakyrelu, 3=clip, 4=sigmoid, 5=mish
 			int activation_type = 0;
-			Tensor activation_param;
+			Tensor activation_params;
 		};
 	}
 }
