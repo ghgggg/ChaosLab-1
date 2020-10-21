@@ -100,6 +100,30 @@ namespace chaos
 			sz = 0;
 		}
 
+		template<class Tp, std::enable_if_t<std::is_convertible_v<Tp, uint>, bool> = true>
+		void Insert(size_t pos, const Tp& val)
+		{
+			if (pos < sz)
+			{
+				size_t rest = sz - pos; // rest < vec.size
+				Resize(sz + 1);
+				memmove(buf + pos + 1, buf + pos, rest * sizeof(Type));
+				buf[pos] = val;
+			}
+			else
+			{
+				Resize(pos + 1);
+				buf[pos] = val;
+			}
+		}
+		void Remove(size_t pos)
+		{
+			CHECK_LT(pos, sz) << "out of range";
+			size_t rest = sz - pos;
+			memmove(buf + pos, buf + pos + 1, rest * sizeof(Type));
+			Resize(sz - 1);
+		}
+
 		template<class Tp, std::enable_if_t<std::is_convertible_v<Type, Tp>, bool> =  true>
 		operator std::vector<Tp>() const
 		{
@@ -227,29 +251,7 @@ namespace chaos
 			return _steps;
 		}
 
-		template<class Tp, std::enable_if_t<std::is_convertible_v<Tp, uint>, bool> = true>
-		void Insert(size_t pos, const Tp& val)
-		{
-			if (pos < sz)
-			{
-				size_t rest = sz - pos; // rest < vec.size
-				Resize(sz + 1);
-				memmove(buf + pos + 1, buf + pos, rest * sizeof(uint));
-				buf[pos] = val;
-			}
-			else
-			{
-				Resize(pos + 1);
-				buf[pos] = val;
-			}
-		}
-		void Remove(size_t pos)
-		{
-			CHECK_LT(pos, sz) << "out of range";
-			size_t rest = sz - pos;
-			memmove(buf + pos, buf + pos + 1, rest * sizeof(uint));
-			Resize(sz - 1);
-		}
+		
 	};
 
 }

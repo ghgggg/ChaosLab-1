@@ -53,15 +53,17 @@ namespace chaos
                 {
                     size_t a_idx = 0;
                     size_t b_idx = 0;
+                    size_t c_idx = 0;
                     size_t idx = i;
                     for (int64 j = num_axes - 1; j >= 0; j--)
                     {
                         size_t k = idx % shape[j];
                         a_idx += (k >= a.shape[j] ? 0 : k) * a.steps[j];
                         b_idx += (k >= b.shape[j] ? 0 : k) * b.steps[j];
+                        c_idx += k * c.steps[j];
                         idx /= shape[j];
                     }
-                    c[i] = op(a[a_idx], b[b_idx]);
+                    c[c_idx] = op(a[a_idx], b[b_idx]);
                 }
             }
         }
@@ -82,13 +84,25 @@ namespace chaos
 
             auto a_shape = a.shape;
             auto b_shape = b.shape;
+            auto a_steps = a.steps;
+            auto b_steps = b.steps;
             // to insert 
             if (a_shape.size() > b_shape.size())
+            {
                 for (int i = 0; i < a_shape.size() - b_shape.size(); i++)
+                {
+                    b_steps.Insert(0, b_steps[0] * b_steps[0]);
                     b_shape.Insert(0, 1);
+                }
+            }
             else
+            {
                 for (int i = 0; i < b_shape.size() - a_shape.size(); i++)
+                {
+                    a_steps.Insert(0, a_steps[0] * b_steps[0]);
                     a_shape.Insert(0, 1);
+                }
+            }
 
             size_t dims = a_shape.size();
             // to chekc the shape
@@ -101,8 +115,8 @@ namespace chaos
             CHECK_EQ(a_shape.vol(), a.shape.vol());
             CHECK_EQ(b_shape.vol(), b.shape.vol());
 
-            Tensor _a = Tensor(a_shape, Depth::D4, Packing::CHW, a.data);
-            Tensor _b = Tensor(b_shape, Depth::D4, Packing::CHW, b.data);
+            Tensor _a = Tensor(a_shape, Depth::D4, Packing::CHW, a.data, a_steps);
+            Tensor _b = Tensor(b_shape, Depth::D4, Packing::CHW, b.data, b_steps);
 
             if (ADD == op_type) return Operator<BinaryAdd>(_a, _b, c, opt);
             if (SUB == op_type) return Operator<BinarySub>(_a, _b, c, opt);

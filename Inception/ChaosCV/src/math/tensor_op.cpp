@@ -6,6 +6,7 @@
 
 namespace chaos
 {
+    static dnn::Option opt; // default option
     void Add(const InputArray& _a, const InputArray& _b, const OutputArray& _c)
     {
         auto layer = dnn::LayerRegistry::CreateLayer("BinaryOp");
@@ -14,10 +15,11 @@ namespace chaos
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();
+        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Depth::D4, Packing::CHW, opt.blob_allocator);
+        Tensor c = _c.GetTensor();
 
-        std::vector<Tensor> tops(1);
-        layer->Forward({ a, b }, tops, dnn::Option());
-        _c.GetTensorRef() = tops[0];
+        std::vector<Tensor> tops = { c };
+        layer->Forward({ a, b }, tops, opt);
     }
     void Sub(const InputArray& _a, const InputArray& _b, const OutputArray& _c)
     {
@@ -27,10 +29,11 @@ namespace chaos
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();
+        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Depth::D4, Packing::CHW, opt.blob_allocator);
+        Tensor c = _c.GetTensor();
 
-        std::vector<Tensor> tops(1);
-        layer->Forward({ a, b }, tops, dnn::Option());
-        _c.GetTensorRef() = tops[0];
+        std::vector<Tensor> tops = { c };
+        layer->Forward({ a, b }, tops, opt);
     }
     void Mul(const InputArray& _a, const InputArray& _b, const OutputArray& _c)
     {
@@ -40,10 +43,11 @@ namespace chaos
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();
+        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Depth::D4, Packing::CHW, opt.blob_allocator);
+        Tensor c = _c.GetTensor();
 
-        std::vector<Tensor> tops(1);
-        layer->Forward({ a, b }, tops, dnn::Option());
-        _c.GetTensorRef() = tops[0];
+        std::vector<Tensor> tops = { c };
+        layer->Forward({ a, b }, tops, opt);
     }
     void Div(const InputArray& _a, const InputArray& _b, const OutputArray& _c)
     {
@@ -53,10 +57,22 @@ namespace chaos
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();
+        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Depth::D4, Packing::CHW, opt.blob_allocator);
+        Tensor c = _c.GetTensor();
 
-        std::vector<Tensor> tops(1);
-        layer->Forward({ a, b }, tops, dnn::Option());
-        _c.GetTensorRef() = tops[0];
+        std::vector<Tensor> tops = {c};
+        layer->Forward({ a, b }, tops, opt);
+    }
+
+
+    void Dot(const InputArray& _a, const InputArray& _b, const OutputArray& _c)
+    {
+        Tensor a = _a.GetTensor(), b = _b.GetTensor();
+        auto layer = dnn::LayerRegistry::CreateLayer("InnerProduct");
+        layer->Set("weight", b);
+
+        Tensor& c = _c.GetTensorRef();
+        layer->Forward(a, c, opt);
     }
 
     //////////////////////////////////////// set identity ////////////////////////////////////////////
