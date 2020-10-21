@@ -7,8 +7,8 @@ namespace chaos
     {
         int i, j, k;
         bool p = true;
-        astep /= sizeof(A[0]);
-        bstep /= sizeof(b[0]);
+        //astep /= sizeof(A[0]);
+        //bstep /= sizeof(b[0]);
 
         for (i = 0; i < m; i++)
         {
@@ -67,8 +67,8 @@ namespace chaos
         Type* L = A;
         int i, j, k;
         double s;
-        astep /= sizeof(A[0]);
-        bstep /= sizeof(b[0]);
+        //astep /= sizeof(A[0]);
+        //bstep /= sizeof(b[0]);
 
         for (i = 0; i < m; i++)
         {
@@ -156,10 +156,10 @@ namespace chaos
         const Type eps = std::numeric_limits<Type>::epsilon();
         int i, j, k, m;
 
-        astep /= sizeof(A[0]);
+        //astep /= sizeof(A[0]);
         if (V)
         {
-            vstep /= sizeof(V[0]);
+            //vstep /= sizeof(V[0]);
             for (i = 0; i < n; i++)
             {
                 for (j = 0; j < n; j++)
@@ -316,14 +316,14 @@ namespace chaos
             v = _evects.GetTensor();
         }
 
-        size_t esz = 1 * src.depth, astep = AlignSize(n * esz, 16);
-        AutoBuffer<uchar> buf(n * astep + n * 5LL * esz + 32);
+        size_t esz = 1 * src.depth, astep = AlignSize(n * esz, 16) / esz;
+        AutoBuffer<uchar> buf(n * (astep + 5ULL) * esz + 32); // n * astep * esz + n * 5LL * esz + 32
         uchar* ptr = AlignPtr(buf.data(), 16);
-        Tensor a({ n, n }, src.depth, src.packing, ptr, { astep / esz,  1ULL }), w({ n, 1 }, src.depth, src.packing, ptr + astep * n);
-        ptr += astep * n + esz * n;
+        Tensor a({ n, n }, src.depth, src.packing, ptr, { astep,  1ULL }), w({ n, 1 }, src.depth, src.packing, ptr + astep * esz * n);
+        ptr += (astep + 1) * esz * n;
         src.CopyTo(a);
 
-        bool ok = JacobiImpl<float>(a, astep, w, v, v.steps[0] * esz, n, ptr);
+        bool ok = JacobiImpl<float>(a, a.steps[0], w, v, v.steps[0], n, ptr);
         w.CopyTo(_evals);
         return ok;
     }
@@ -395,8 +395,8 @@ namespace chaos
         int i, j, k, iter, max_iter = std::max(m, 30);
         Type c, s;
         double sd;
-        astep /= sizeof(At[0]);
-        vstep /= sizeof(Vt[0]);
+        //astep /= sizeof(At[0]);
+        //vstep /= sizeof(Vt[0]);
 
         for (i = 0; i < n; i++)
         {
@@ -668,11 +668,11 @@ namespace chaos
             const float* b, size_t bstep, int nb,
             float* x, size_t xstep, uchar* buffer)
     {
-        SVBkSbImpl(m, n, w, wstep ? (int)(wstep / sizeof(w[0])) : 1,
-            u, (int)(ustep / sizeof(u[0])), uT,
-            v, (int)(vstep / sizeof(v[0])), vT,
-            b, (int)(bstep / sizeof(b[0])), nb,
-            x, (int)(xstep / sizeof(x[0])),
+        SVBkSbImpl(m, n, w, wstep ? (int)(wstep) : 1,
+            u, (int)(ustep), uT,
+            v, (int)(vstep), vT,
+            b, (int)(bstep), nb,
+            x, (int)(xstep),
             (double*)AlignPtr(buffer, sizeof(double)), (float)(DBL_EPSILON * 2));
     }
 
@@ -702,15 +702,15 @@ namespace chaos
         }
         
         int urows = full_uv ? m : n;
-        size_t esz = 1 * src.depth, astep = AlignSize(m * esz, 16), vstep = AlignSize(n * esz, 16);
-        AutoBuffer<uchar> _buf(urows * astep + n * vstep + n * esz + 32);
+        size_t esz = 1 * src.depth, astep = AlignSize(m * esz, 16) / esz, vstep = AlignSize(n * esz, 16) / esz;
+        AutoBuffer<uchar> _buf((urows * astep + n * vstep + n) * esz + 32); // urows * astep * esz + n * vstep * esz + n * esz + 32
         uchar* buf = AlignPtr(_buf.data(), 16);
-        Tensor temp_a(Shape(n, m), Depth::D4, Packing::CHW, buf, { astep / esz, 1ULL });
-        Tensor temp_w(Shape(n, 1), Depth::D4, Packing::CHW, buf + urows * astep);
-        Tensor temp_u(Shape(urows, m), Depth::D4, Packing::CHW, buf, { astep / esz, 1ULL }), temp_v;
+        Tensor temp_a(Shape(n, m), Depth::D4, Packing::CHW, buf, { astep, 1ULL });
+        Tensor temp_w(Shape(n, 1), Depth::D4, Packing::CHW, buf + urows * astep * esz);
+        Tensor temp_u(Shape(urows, m), Depth::D4, Packing::CHW, buf, { astep, 1ULL }), temp_v;
 
         if (compute_uv)
-            temp_v = Tensor(Shape(n, n), Depth::D4, Packing::CHW, AlignPtr(buf + urows * astep + n * esz, 16), { vstep / esz, 1ULL });
+            temp_v = Tensor(Shape(n, n), Depth::D4, Packing::CHW, AlignPtr(buf + (urows * astep + n) * esz, 16), { vstep, 1ULL });
 
         if (urows > n)
             memset(temp_u, 0, esz * temp_u.shape[0] * temp_u.steps[0]);
@@ -756,7 +756,7 @@ namespace chaos
         auto allocator = w.allocator;
 
         uint m = u.shape[0], n = vt.shape[1], nb = rhs.empty() ? m : rhs.shape[1], nm = std::min(m, n);
-        size_t wstep = w.shape[0] == 1 ? (size_t)esz : w.shape[1] == 1 ? (size_t)w.steps[0] * esz : (size_t)w.steps[0] * esz + esz;
+        size_t wstep = w.shape[0] == 1 ? 1ULL : w.shape[1] == 1 ? (size_t)w.steps[0] : (size_t)w.steps[0] + 1;
         AutoBuffer<uchar> buffer(nb * sizeof(double) + 16);
 
         CHECK(w.depth == u.depth && u.depth == vt.depth && u.data && vt.data && w.data);
@@ -767,9 +767,9 @@ namespace chaos
         _dst.Create({ n, nb }, depth, packing, allocator);
         Tensor dst = _dst.GetTensor();
 
-        SVBkSb(m, n, w, wstep, u, u.steps[0] * esz, false,
-            vt, vt.steps[0] * esz, true, rhs, rhs.empty() ? 0 : rhs.steps[0] * esz, nb,
-            dst, dst.steps[0] * esz, buffer.data());
+        SVBkSb(m, n, w, wstep, u, u.steps[0], false,
+            vt, vt.steps[0], true, rhs, rhs.empty() ? 0 : rhs.steps[0], nb,
+            dst, dst.steps[0], buffer.data());
     }
 
     bool Invert(const InputArray& _src, const OutputArray& _dst, int method)
@@ -904,11 +904,11 @@ namespace chaos
 
         if (method == DECOMP_LU)
         {
-            return LU(src1, src1.steps[0] * esz, n, dst, dst.steps[0] * esz, n);
+            return LU(src1, src1.steps[0], n, dst, dst.steps[0], n);
         }
         if (method == DECOMP_CHOLESKY)
         {
-            return Cholesky(src1, src1.steps[0] * esz, n, dst, dst.steps[0] * esz, n);
+            return Cholesky(src1, src1.steps[0], n, dst, dst.steps[0], n);
         }
 
         return false;
