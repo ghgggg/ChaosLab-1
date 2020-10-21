@@ -180,6 +180,7 @@
     <ClInclude Include="include\dnn\option.hpp" />
     <ClInclude Include="include\math\base.hpp" />
     <ClInclude Include="include\math\tensor_op.hpp" />
+    <ClInclude Include="include\metrics\confusion.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\allocator.cpp" />
@@ -196,6 +197,7 @@
     <ClCompile Include="src\dnn\model.cpp" />
     <ClCompile Include="src\math\lapack.cpp" />
     <ClCompile Include="src\math\tensor_op.cpp" />
+    <ClCompile Include="src\metrics\confusion.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -37,6 +37,12 @@
     <Filter Include="Source Files\dnn\layers">
       <UniqueIdentifier>{325eb4c5-9361-4062-bff7-ee2780bc214e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\metrics">
+      <UniqueIdentifier>{f8ee2a93-6e92-4677-b89d-c4451a402634}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\metrics">
+      <UniqueIdentifier>{4edbaf10-9816-408f-866d-854b22221613}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\core.hpp">
@@ -90,6 +96,9 @@
     <ClInclude Include="include\dnn\layers\noop.hpp">
       <Filter>Header Files\dnn\layers</Filter>
     </ClInclude>
+    <ClInclude Include="include\metrics\confusion.hpp">
+      <Filter>Header Files\metrics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\core.cpp">
@@ -133,6 +142,9 @@
     </ClCompile>
     <ClCompile Include="src\dnn\layers\noop.cpp">
       <Filter>Source Files\dnn\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\metrics\confusion.cpp">
+      <Filter>Source Files\metrics</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
