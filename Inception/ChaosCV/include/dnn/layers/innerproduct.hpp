@@ -16,7 +16,6 @@ namespace chaos
 
 			virtual void Forward(const Tensor& bottom, Tensor& top, const Option& opt) const override;
 
-			
 			Tensor weight; // MxN
 			Tensor bias;
 			// 0=none, 1=relu, 2=leakyrelu, 3=clip, 4=sigmoid, 5=mish

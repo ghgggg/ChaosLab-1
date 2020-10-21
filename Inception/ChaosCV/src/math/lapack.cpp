@@ -7,8 +7,8 @@ namespace chaos
     {
         int i, j, k;
         bool p = true;
-        //astep /= sizeof(A[0]);
-        //bstep /= sizeof(b[0]);
+        astep /= sizeof(A[0]);
+        bstep /= sizeof(b[0]);
 
         for (i = 0; i < m; i++)
         {
@@ -67,8 +67,8 @@ namespace chaos
         Type* L = A;
         int i, j, k;
         double s;
-        //astep /= sizeof(A[0]);
-        //bstep /= sizeof(b[0]);
+        astep /= sizeof(A[0]);
+        bstep /= sizeof(b[0]);
 
         for (i = 0; i < m; i++)
         {
@@ -904,11 +904,11 @@ namespace chaos
 
         if (method == DECOMP_LU)
         {
-            return LU(src1, src1.steps[0], n, dst, dst.steps[0], n);
+            return LU(src1, src1.steps[0] * esz, n, dst, dst.steps[0] * esz, n);
         }
         if (method == DECOMP_CHOLESKY)
         {
-            return Cholesky(src1, src1.steps[0], n, dst, dst.steps[0], n);
+            return Cholesky(src1, src1.steps[0] * esz, n, dst, dst.steps[0] * esz, n);
         }
 
         return false;

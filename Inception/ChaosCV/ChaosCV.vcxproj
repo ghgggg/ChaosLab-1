@@ -173,6 +173,7 @@
     <ClInclude Include="include\dnn\layer.hpp" />
     <ClInclude Include="include\dnn\layers\binary_op.hpp" />
     <ClInclude Include="include\dnn\layers\innerproduct.hpp" />
+    <ClInclude Include="include\dnn\layers\noop.hpp" />
     <ClInclude Include="include\dnn\layer_factory.hpp" />
     <ClInclude Include="include\dnn\model.hpp" />
     <ClInclude Include="include\dnn\net.hpp" />
@@ -189,6 +190,7 @@
     <ClCompile Include="src\dbb\layers\innerproduct.cpp" />
     <ClCompile Include="src\dnn\layer.cpp" />
     <ClCompile Include="src\dnn\layers\binary_op.cpp" />
+    <ClCompile Include="src\dnn\layers\noop.cpp" />
     <ClCompile Include="src\dnn\layer_declaration.cpp" />
     <ClCompile Include="src\dnn\layer_factory.cpp" />
     <ClCompile Include="src\dnn\model.cpp" />

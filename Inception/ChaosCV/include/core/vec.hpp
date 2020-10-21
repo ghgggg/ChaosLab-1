@@ -131,6 +131,16 @@ namespace chaos
 			return stream << "]";
 		}
 
+		friend bool operator==(const Vec& lhs, const Vec& rhs) noexcept
+		{
+			if (lhs.size() != rhs.size()) return false;
+			for (size_t i = 0; i < lhs.size(); i++)
+			{
+				if (lhs[i] != rhs[i]) return false;
+			}
+			return true;
+		}
+
 	protected:
 		Type* buf = nullptr;
 		size_t sz = 0;
@@ -239,16 +249,6 @@ namespace chaos
 			size_t rest = sz - pos;
 			memmove(buf + pos, buf + pos + 1, rest * sizeof(uint));
 			Resize(sz - 1);
-		}
-
-		friend bool operator==(const Shape& lhs, const Shape& rhs) noexcept
-		{
-			if (lhs.size() != rhs.size()) return false;
-			for (size_t i = 0; i < lhs.size(); i++)
-			{
-				if (lhs[i] != rhs[i]) return false;
-			}
-			return true;
 		}
 	};
 

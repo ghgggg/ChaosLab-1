@@ -87,6 +87,9 @@
     <ClInclude Include="include\dnn\layers\innerproduct.hpp">
       <Filter>Header Files\dnn\layers</Filter>
     </ClInclude>
+    <ClInclude Include="include\dnn\layers\noop.hpp">
+      <Filter>Header Files\dnn\layers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\core.cpp">
@@ -126,6 +129,9 @@
       <Filter>Source Files\dnn</Filter>
     </ClCompile>
     <ClCompile Include="src\dbb\layers\innerproduct.cpp">
+      <Filter>Source Files\dnn\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dnn\layers\noop.cpp">
       <Filter>Source Files\dnn\layers</Filter>
     </ClCompile>
   </ItemGroup>
