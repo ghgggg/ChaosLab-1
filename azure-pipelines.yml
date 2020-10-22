@@ -21,18 +21,11 @@ steps:
   displayName: 'Run a multi-line script'
 
 - task: VSBuild@1
-  displayName: 'Build ChaosCV'
+  displayName: 'Build ChaosLab'
   inputs:
-    solution: 'Inception\ChaosCV\ChaosCV.vcxproj'
+    solution: 'ChaosLab.sln'
     platform: 'x64'
     configuration: 'Release'
-
-- task: VSBuild@1
-  displayName: 'Build ChaosMath Test'
-  inputs:
-   solution: 'Tests\ChaosMathTest\ChaosMathTest.vcxproj'
-   platform: 'x64'
-   configuration: 'Release'
 
 - task: VSTest@2
   inputs:
