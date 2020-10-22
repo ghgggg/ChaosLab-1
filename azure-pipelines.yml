@@ -27,7 +27,7 @@ steps:
     solution: 'ChaosLab.sln'
     platform: 'x64'
     configuration: 'Release'
-    #msbuildArgs: '/p:CollectCoverage=true /p:CoverletOutputFormat=jacoco /p:CoverletOutput=$(Build.DefaultWorkingDirectory)/TestResults/Coverage/'
+    msbuildArgs: '/p:CollectCoverage=true /p:CoverletOutputFormat=jacoco /p:CoverletOutput=$(Build.DefaultWorkingDirectory)/TestResults/Coverage/'
 
 - task: VSTest@2
   inputs:
@@ -40,5 +40,5 @@ steps:
 - task: PublishCodeCoverageResults@1
   inputs:
     codeCoverageTool: 'JaCoCo'
-    summaryFileLocation: '$(System.DefaultWorkingDirectory)/../TestResults/*.xml'
+    summaryFileLocation: '$(Build.DefaultWorkingDirectory)/TestResults/Coverage/*.xml'
 
