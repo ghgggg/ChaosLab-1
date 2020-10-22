@@ -37,3 +37,8 @@ steps:
     diagnosticsEnabled: true
     searchFolder: '$(System.DefaultWorkingDirectory)\build\x64\Release'
 
+- task: PublishTestResults@2
+  inputs:
+   testResultsFiles: 'D:\a\_temp\TestResults\*.trx'
+   testResultsFormat: 'VSTest'
+
