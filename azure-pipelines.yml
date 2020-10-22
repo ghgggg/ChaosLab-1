@@ -36,13 +36,3 @@ steps:
     codeCoverageEnabled: true
     searchFolder: '$(System.DefaultWorkingDirectory)\build\x64\Release'
 
-
-- task: PublishCodeCoverageResults@1
-  inputs:
-    codeCoverageTool: 'JaCoCo'
-    summaryFileLocation: '**/*.coverage'
-
-- task: PublishTestResults@2
-  inputs:
-    testRunner: VSTest
-    testResultsFiles: '**/*.trx'
