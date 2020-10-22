@@ -45,4 +45,4 @@ steps:
 - task: PublishCodeCoverageResults@1
   inputs:
     codeCoverageTool: 'cobertura' # Options: cobertura, jaCoCo
-    summaryFileLocation:  'D:\a\_temp\TestResults\*.xml'
+    summaryFileLocation:  'D:\a\_temp\TestResults\*.coverage'
