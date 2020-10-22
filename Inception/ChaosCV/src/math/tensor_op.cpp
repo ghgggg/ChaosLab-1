@@ -67,7 +67,8 @@ namespace chaos
 
     void Dot(const InputArray& _a, const InputArray& _b, const OutputArray& _c)
     {
-        Tensor a = _a.GetTensor(), b = _b.GetTensor();
+        Tensor a = _a.GetTensor(), b;
+        Transpose(_b.GetTensor(), b);
         auto layer = dnn::LayerRegistry::CreateLayer("InnerProduct");
         layer->Set("weight", b);
 
