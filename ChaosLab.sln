@@ -9,6 +9,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Inception", "Inception", "{
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ChaosCV", "Inception\ChaosCV\ChaosCV.vcxproj", "{A43EB8FB-6AA7-4801-9420-255DFD13ED4D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0CF3B82A-9ACF-4D48-AE72-172A86126520}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ChaosMathTest", "Tests\ChaosMathTest\ChaosMathTest.vcxproj", "{AA6C8907-F486-4163-8F2E-7F0F6F2B5B35}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -33,12 +37,21 @@ Global
 		{A43EB8FB-6AA7-4801-9420-255DFD13ED4D}.Release|x64.Build.0 = Release|x64
 		{A43EB8FB-6AA7-4801-9420-255DFD13ED4D}.Release|x86.ActiveCfg = Release|Win32
 		{A43EB8FB-6AA7-4801-9420-255DFD13ED4D}.Release|x86.Build.0 = Release|Win32
+		{AA6C8907-F486-4163-8F2E-7F0F6F2B5B35}.Debug|x64.ActiveCfg = Debug|x64
+		{AA6C8907-F486-4163-8F2E-7F0F6F2B5B35}.Debug|x64.Build.0 = Debug|x64
+		{AA6C8907-F486-4163-8F2E-7F0F6F2B5B35}.Debug|x86.ActiveCfg = Debug|Win32
+		{AA6C8907-F486-4163-8F2E-7F0F6F2B5B35}.Debug|x86.Build.0 = Debug|Win32
+		{AA6C8907-F486-4163-8F2E-7F0F6F2B5B35}.Release|x64.ActiveCfg = Release|x64
+		{AA6C8907-F486-4163-8F2E-7F0F6F2B5B35}.Release|x64.Build.0 = Release|x64
+		{AA6C8907-F486-4163-8F2E-7F0F6F2B5B35}.Release|x86.ActiveCfg = Release|Win32
+		{AA6C8907-F486-4163-8F2E-7F0F6F2B5B35}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A43EB8FB-6AA7-4801-9420-255DFD13ED4D} = {DA6FCFC7-31EE-4173-AB3D-0415C47FFBB9}
+		{AA6C8907-F486-4163-8F2E-7F0F6F2B5B35} = {0CF3B82A-9ACF-4D48-AE72-172A86126520}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5E0D9622-CE89-4BEF-B19E-D32E5A40A39D}

@@ -26,3 +26,16 @@ steps:
     solution: 'Inception\ChaosCV\ChaosCV.vcxproj'
     platform: 'x64'
     configuration: 'Release'
+
+- task: VSBuild@1
+  displayName: 'Build ChaosMath Test'
+  inputs:
+   solution: 'Tests\ChaosMathTest\ChaosMathTest.vcxproj'
+   platform: 'x64'
+   configuration: 'Release'
+
+- task: VSTest@2
+  inputs:
+    testSelector: 'testAssemblies'
+    testAssemblyVer2: 'ChaosMathTest.dll'
+    searchFolder: '$(System.DefaultWorkingDirectory)\build\Release'

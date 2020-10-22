@@ -51,7 +51,6 @@ namespace chaos
 				return *this;
 			}
 
-			Deallocate();
 			Allocate(v.size());
 			for (size_t i = 0; i < sz; i++)
 			{
@@ -96,7 +95,11 @@ namespace chaos
 
 		void Deallocate()
 		{
-			if (buf) delete[] buf;
+			if (buf)
+			{
+				delete[] buf;
+				buf = nullptr;
+			}
 			sz = 0;
 		}
 
