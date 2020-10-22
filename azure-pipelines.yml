@@ -31,13 +31,9 @@ steps:
   inputs:
     testSelector: 'testAssemblies'
     testAssemblyVer2: 'ChaosMathTest.dll'
+    codeCoverageEnabled: true
     searchFolder: '$(System.DefaultWorkingDirectory)\build\x64\Release'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: test
-    projects: 'Tests/ChaosMathTest/*.vcxproj'
-    arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
 
 - task: PublishCodeCoverageResults@1
   inputs:
