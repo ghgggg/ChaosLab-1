@@ -39,10 +39,10 @@ steps:
 
 - task: PublishTestResults@2
   inputs:
-   testResultsFiles: 'D:\a\_temp\TestResults\*.trx'
+   testResultsFiles: '$(Agent.TempDirectory)\TestResults\*.trx'
    testResultsFormat: 'VSTest'
 
 - task: PublishCodeCoverageResults@1
   inputs:
     codeCoverageTool: 'cobertura' # Options: cobertura, jaCoCo
-    summaryFileLocation:  'D:\a\_temp\TestResults\*.coverage'
+    summaryFileLocation:  '$(Agent.TempDirectory)\TestResults\*.xml'
