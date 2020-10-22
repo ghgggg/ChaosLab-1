@@ -32,3 +32,10 @@ steps:
     testSelector: 'testAssemblies'
     testAssemblyVer2: 'ChaosMathTest.dll'
     searchFolder: '$(System.DefaultWorkingDirectory)\build\x64\Release'
+    
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: 'JaCoCo'
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)\build\x64\Release'
+    pathToSources: 'Inception\ChaosCV\'
+
