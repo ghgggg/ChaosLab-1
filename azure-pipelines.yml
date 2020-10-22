@@ -13,18 +13,11 @@ pool:
   #- visualstudio
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
-
-- task: UseDotNet@2
-  inputs:
-    version: '5.0.x'
-    includePreviewVersions: true
+#- task: UseDotNet@2
+#  inputs:
+#    version: '5.0.x'
+#    includePreviewVersions: true
 
 - task: VSBuild@1
   displayName: 'Build ChaosLab'
@@ -47,8 +40,3 @@ steps:
    testResultsFiles: '$(Agent.TempDirectory)\TestResults\*.trx'
    testResultsFormat: 'VSTest'
 
-- task: PublishCodeCoverageResults@1
-  inputs:
-    codeCoverageTool: 'JaCoCo' # Options: cobertura, jaCoCo
-    summaryFileLocation:  '$(Agent.TempDirectory)\TestResults\*.xml'
-    additionalCodeCoverageFiles: '$(Agent.TempDirectory)\TestResults\*.coverage'
