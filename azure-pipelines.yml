@@ -51,3 +51,4 @@ steps:
   inputs:
     codeCoverageTool: 'JaCoCo' # Options: cobertura, jaCoCo
     summaryFileLocation:  '$(Agent.TempDirectory)\TestResults\*.xml'
+    additionalCodeCoverageFiles: '$(Agent.TempDirectory)\TestResults\*.coverage'
