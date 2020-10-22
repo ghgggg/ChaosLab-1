@@ -31,4 +31,4 @@ steps:
   inputs:
     testSelector: 'testAssemblies'
     testAssemblyVer2: 'ChaosMathTest.dll'
-    searchFolder: '$(System.DefaultWorkingDirectory)\build\Release'
+    searchFolder: '$(System.DefaultWorkingDirectory)\build\x64\Release'
