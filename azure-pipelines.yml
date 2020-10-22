@@ -7,9 +7,10 @@ trigger:
 - master
 
 pool:
-  name: ChaosAgent
-  demands:
-  - visualstudio
+  vmImage: 'windows-latest'
+  #name: ChaosAgent
+  #demands:
+  #- visualstudio
 
 steps:
 - script: echo Hello, world!
@@ -26,7 +27,7 @@ steps:
     solution: 'ChaosLab.sln'
     platform: 'x64'
     configuration: 'Release'
-    msbuildArgs: '/p:CollectCoverage=true /p:CoverletOutputFormat=jacoco /p:CoverletOutput=$(Build.DefaultWorkingDirectory)/TestResults/Coverage/'
+    #msbuildArgs: '/p:CollectCoverage=true /p:CoverletOutputFormat=jacoco /p:CoverletOutput=$(Build.DefaultWorkingDirectory)/TestResults/Coverage/'
 
 - task: VSTest@2
   inputs:
