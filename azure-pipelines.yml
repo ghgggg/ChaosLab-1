@@ -14,29 +14,38 @@ pool:
 
 steps:
 
-#- task: UseDotNet@2
+- task: UseDotNet@2
+  inputs:
+    version: '5.0.x'
+    includePreviewVersions: true
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'restore'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: build
+    projects: '**/*.sln'
+
+#- task: VSBuild@1
+#  displayName: 'Build ChaosLab'
 #  inputs:
-#    version: '5.0.x'
-#    includePreviewVersions: true
+#    solution: 'ChaosLab.sln'
+#    platform: 'x64'
+#    configuration: 'Release'
+#    #msbuildArgs: '/p:CollectCoverage=true /p:CoverletOutputFormat=jacoco /p:CoverletOutput=$(Build.DefaultWorkingDirectory)/TestResults/Coverage/'
 
-- task: VSBuild@1
-  displayName: 'Build ChaosLab'
-  inputs:
-    solution: 'ChaosLab.sln'
-    platform: 'x64'
-    configuration: 'Release'
-    #msbuildArgs: '/p:CollectCoverage=true /p:CoverletOutputFormat=jacoco /p:CoverletOutput=$(Build.DefaultWorkingDirectory)/TestResults/Coverage/'
+#- task: VSTest@2
+#  inputs:
+#    testSelector: 'testAssemblies'
+#    testAssemblyVer2: 'ChaosMathTest.dll'
+#    codeCoverageEnabled: true
+#    diagnosticsEnabled: true
+#    searchFolder: '$(System.DefaultWorkingDirectory)\build\x64\Release'
 
-- task: VSTest@2
-  inputs:
-    testSelector: 'testAssemblies'
-    testAssemblyVer2: 'ChaosMathTest.dll'
-    codeCoverageEnabled: true
-    diagnosticsEnabled: true
-    searchFolder: '$(System.DefaultWorkingDirectory)\build\x64\Release'
-
-- task: PublishTestResults@2
-  inputs:
-   testResultsFiles: '$(Agent.TempDirectory)\TestResults\*.trx'
-   testResultsFormat: 'VSTest'
+#- task: PublishTestResults@2
+#  inputs:
+#   testResultsFiles: '$(Agent.TempDirectory)\TestResults\*.trx'
+#   testResultsFormat: 'VSTest'
 
