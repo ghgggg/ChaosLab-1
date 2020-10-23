@@ -47,8 +47,9 @@ steps:
       mkdir .\reports
       
       "run tests:"
-      $coverlet = "$pwd\coverlet.ext"
-      print $(System.DefaultWorkingDirectory)
+      $coverlet = "$pwd\coverlet.ext" 
+      $vstest = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
+      &$coverlet $(System.DefaultWorkingDirectory)\build\x64\Release\*Test.dll --target "$vstest" --targetarg "ChaosMathTest.dll --logger:trx --enablecodecoverage" --format "cobertura"
 
 
 
