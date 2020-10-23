@@ -13,39 +13,28 @@ pool:
   #- visualstudio
 
 steps:
-
-- task: UseDotNet@2
+- task: VSBuild@1
+  displayName: 'Build ChaosLab'
   inputs:
-    version: '5.0.x'
-    includePreviewVersions: true
-
-- task: DotNetCoreCLI@2
+    solution: 'ChaosLab.sln'
+    platform: 'x64'
+    configuration: 'Release'
+ 
+- task: VSTest@2
   inputs:
-    command: 'restore'
+    testSelector: 'testAssemblies'
+    testAssemblyVer2: 'ChaosMathTest.dll'
+    codeCoverageEnabled: true
+    searchFolder: '$(System.DefaultWorkingDirectory)\build\x64\Release'
+    platform: 'x64'
+    configuration: 'Release'
 
-- task: DotNetCoreCLI@2
+- task: PublishTestResults@2
   inputs:
-    command: build
-    projects: '**/*.sln'
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '$(Agent.TempDirectory)\TestResults\*.trx'
 
-#- task: VSBuild@1
-#  displayName: 'Build ChaosLab'
-#  inputs:
-#    solution: 'ChaosLab.sln'
-#    platform: 'x64'
-#    configuration: 'Release'
-#    #msbuildArgs: '/p:CollectCoverage=true /p:CoverletOutputFormat=jacoco /p:CoverletOutput=$(Build.DefaultWorkingDirectory)/TestResults/Coverage/'
-
-#- task: VSTest@2
-#  inputs:
-#    testSelector: 'testAssemblies'
-#    testAssemblyVer2: 'ChaosMathTest.dll'
-#    codeCoverageEnabled: true
-#    diagnosticsEnabled: true
-#    searchFolder: '$(System.DefaultWorkingDirectory)\build\x64\Release'
-
-#- task: PublishTestResults@2
-#  inputs:
-#   testResultsFiles: '$(Agent.TempDirectory)\TestResults\*.trx'
-#   testResultsFormat: 'VSTest'
-
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: '$(Agent.TempDirectory)\TestResults\*.xml'
