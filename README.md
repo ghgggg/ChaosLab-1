@@ -1,12 +1,21 @@
-[![Build Status](https://dev.azure.com/zjysnow/ChaosLab/_apis/build/status/ChaosLab?branchName=master)](https://dev.azure.com/zjysnow/ChaosLab/_build/latest?definitionId=21&branchName=master)
 
-# 介绍（2020.10。23）
+# Chaos Lab
+[![Build Status](https://dev.azure.com/zjysnow/ChaosLab/_apis/build/status/zjysnow.ChaosLab?branchName=master)](https://dev.azure.com/zjysnow/ChaosLab/_build/latest?definitionId=23&branchName=master)
 
-# 代码结构介绍
-1. Common 通用应用模块，包含一些常用文件、字节流、文件系统的处理（暂未实现）
-2. Inception 主代码块，前向推理框架主程序，包括常用的人脸识别项目的主应用代码（人脸检测、人脸标定、对齐及人脸识别），推理框架正在实现中，不依赖三方库，方便其他应用调用
-3. Sandbox，库测试模块
+# ChaosCV
+目的是为了实现类似TinyCV的模块，以及方便测试等，同时能够用相同的接口封装多个深度学习的推理框架  
+由于不会CMAKE，使用VS管理项目，不支持Linux环境  
 
-to be updated...
+目前包含的模块  
+ - [x] LOG模块
+ - [ ] Math模块
+   - [x] 矩阵分解
+   - [ ] 基础矩阵运算
+- [ ] DNN模块
+  - [x] BinaryOp
+  - [x] Inner Product
+- [x] 混淆矩阵
 
-
+# Sandbox
+不更新该文件夹，目的是为了方便在VS中测试代码而创建的沙盒项目  
+请自行创建Sandbox项目进行测试
