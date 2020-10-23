@@ -33,24 +33,6 @@ steps:
   inputs:
     testResultsFormat: 'VSTest'
     testResultsFiles: '$(Agent.TempDirectory)\TestResults\*.trx'
-  
-- task: PowerShell@2
-  displayName: 'Coverlet'
-  inputs:
-    targetType: 'inline'
-    script: |
-      "Install tools"
-      &dotnet tool install dotnet-reportgenerator-globaltool --tool-path . --version 4.0.12
-      &dotnet tool install coverlet.console --tool-path . --version 1.4.1
-
-      "nmake rports dir"
-      mkdir .\reports
-      
-      "run tests:"
-      $coverlet = "$pwd\coverlet.exe" 
-      $vstest = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
-      &$coverlet $(System.DefaultWorkingDirectory)\build\x64\Release\ChaosMathTest.dll --target "$vstest" --targetargs "$(System.DefaultWorkingDirectory)\build\x64\Release\ChaosMathTest.dll --logger:trx --enablecodecoverage" --format "cobertura"
-
 
 
 
