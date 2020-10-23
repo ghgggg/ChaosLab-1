@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/zjysnow/ChaosLab/_apis/build/status/ChaosLab?branchName=master)](https://dev.azure.com/zjysnow/ChaosLab/_build/latest?definitionId=21&branchName=master)
+
 # 介绍（2020.10。23）
 
 # 代码结构介绍
