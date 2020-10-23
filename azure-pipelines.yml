@@ -23,7 +23,7 @@ steps:
 - task: VSTest@2
   inputs:
     testSelector: 'testAssemblies'
-    testAssemblyVer2: 'ChaosMathTest.dll'
+    testAssemblyVer2: '**\*Test.dll'
     codeCoverageEnabled: true
     searchFolder: '$(System.DefaultWorkingDirectory)\build\x64\Release'
     platform: 'x64'
