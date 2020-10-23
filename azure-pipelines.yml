@@ -33,8 +33,24 @@ steps:
   inputs:
     testResultsFormat: 'VSTest'
     testResultsFiles: '$(Agent.TempDirectory)\TestResults\*.trx'
-
-- task: PublishCodeCoverageResults@1
+  
+- task: PowerShell@2
+  displayName: 'Coverlet'
   inputs:
-    codeCoverageTool: 'Cobertura'
-    summaryFileLocation: '$(Agent.TempDirectory)\TestResults\*.xml'
+    targetType: 'inline'
+    script: |
+      "Install tools"
+      &dotnet tool install dotnet-reportgenerator-globaltool --tool-path . --version 4.0.12
+      &dotnet tool install coverlet.console --tool-path . --version 1.4.1
+
+      "nmake rports dir"
+      mkdir .\reports
+      
+      "run tests:"
+      $coverlet = "$pwd\coverlet.ext"
+      print $(System.DefaultWorkingDirectory)
+
+
+
+
+
