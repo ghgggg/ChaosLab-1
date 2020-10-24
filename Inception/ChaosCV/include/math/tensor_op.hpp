@@ -15,11 +15,9 @@ namespace chaos
 	// c = a ./ b
 	CHAOS_API void Div(const InputArray& a, const InputArray& b, const OutputArray& c);
 
-	CHAOS_API void Dot(const InputArray&, const InputArray& b, const OutputArray& c); // ²»·ûºÏ¹æ·¶
+	CHAOS_API void Dot(const InputArray& a, const InputArray& b, const OutputArray& c);
 
 	CHAOS_API void SetIdentity(const InputOutputArray& src, double val = 1.);
 	CHAOS_API void Transpose(const InputArray& src, const OutputArray& dst);
-	//CHAOS_API void Permute(const Tensor& src, Tensor& dst, const Vec<uint>& orders);
-
 	CHAOS_API void Permute(const InputArray& src, const OutputArray& dst, const Vec<uint>& orders);
 }

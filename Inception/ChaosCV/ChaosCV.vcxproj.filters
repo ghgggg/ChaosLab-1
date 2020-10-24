@@ -99,6 +99,9 @@
     <ClInclude Include="include\metrics\confusion.hpp">
       <Filter>Header Files\metrics</Filter>
     </ClInclude>
+    <ClInclude Include="include\dnn\layers\permute.hpp">
+      <Filter>Header Files\dnn\layers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\core.cpp">
@@ -145,6 +148,9 @@
     </ClCompile>
     <ClCompile Include="src\metrics\confusion.cpp">
       <Filter>Source Files\metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dnn\layers\permute.cpp">
+      <Filter>Source Files\dnn\layers</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

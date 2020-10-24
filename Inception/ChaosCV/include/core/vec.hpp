@@ -27,7 +27,8 @@ namespace chaos
 			}
 		}
 
-		Vec(size_t size, const Type* ptr)
+		template<class Tp, std::enable_if_t<std::is_convertible_v<Tp, Type>, bool> = true>
+		Vec(size_t size, const Tp* ptr)
 		{
 			Allocate(size);
 			for (size_t i = 0; i < sz; i++)
