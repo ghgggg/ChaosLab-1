@@ -150,6 +150,8 @@ namespace chaos
 
     void Permute(const InputArray& _src, const OutputArray& _dst, const Vec<uint>& orders)
     {
+
+#if 0
         Tensor src = _src.GetTensor();
         CHECK_EQ(src.shape.size(), orders.size());
 
@@ -184,6 +186,7 @@ namespace chaos
             return PermuteImpl<float>(shape.vol(), src, orders.data(), src.shape.data(), src.steps.data(), shape.data(), dst.steps.data(), num_axes, dst);
         LOG(FATAL) << "not supported yet";
         return;
+#endif
     }
 
     ////////////////////////////////////// transpose /////////////////////////////////////////

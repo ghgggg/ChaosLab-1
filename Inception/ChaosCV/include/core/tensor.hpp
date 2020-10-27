@@ -18,16 +18,6 @@ namespace chaos
 		Tensor(const Tensor& t);
 		Tensor& operator=(const Tensor& t);
 
-		template<class Type>
-		Tensor(const Vec<Type>& vec)
-		{
-			Create({ vec.size() }, Depth((int)sizeof(Type)), Packing::CHW, nullptr);
-			for (size_t i = 0; i < vec.size(); i++)
-			{
-				((Type*)data)[i] = vec[i];
-			}
-		}
-
 		void Create(const Shape& _shape, const Depth& _depth, const Packing& _packing, Allocator* _allocator);
 
 		//void CopyTo(Tensor& t) const;

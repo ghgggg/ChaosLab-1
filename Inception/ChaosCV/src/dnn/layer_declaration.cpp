@@ -17,3 +17,8 @@ NAMESPACE_END
 NAMESPACE_BEGIN
 REGISTER_LAYER("Noop", Noop);
 NAMESPACE_END
+
+#include "dnn/layers/permute.hpp"
+NAMESPACE_BEGIN
+REGISTER_LAYER("Permute", Permute);
+NAMESPACE_END

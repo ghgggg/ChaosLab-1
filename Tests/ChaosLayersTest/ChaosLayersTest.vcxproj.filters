@@ -18,6 +18,9 @@
     <ClCompile Include="test_binary_op.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="test_permute.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp">

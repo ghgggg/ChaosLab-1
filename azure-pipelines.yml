@@ -7,10 +7,10 @@ trigger:
 - master
 
 pool:
-  vmImage: 'windows-latest'
-  #name: ChaosAgent
-  #demands:
-  #- visualstudio
+  #vmImage: 'windows-latest'
+  name: ChaosAgent
+  demands:
+  - visualstudio
 
 steps:
 - task: VSBuild@1
@@ -24,7 +24,7 @@ steps:
   inputs:
     testSelector: 'testAssemblies'
     testAssemblyVer2: '**\*Test.dll'
-    codeCoverageEnabled: true
+    #codeCoverageEnabled: true
     searchFolder: '$(System.DefaultWorkingDirectory)\build\x64\Release'
     platform: 'x64'
     configuration: 'Release'
