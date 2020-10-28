@@ -111,6 +111,9 @@
     <ClInclude Include="include\core\vulkan\gpu.hpp">
       <Filter>Header Files\core\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="include\core\vulkan\vk_allocator.hpp">
+      <Filter>Header Files\core\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\core.cpp">
@@ -162,6 +165,9 @@
       <Filter>Source Files\dnn\layers</Filter>
     </ClCompile>
     <ClCompile Include="src\core\vulkan\gpu.cpp">
+      <Filter>Source Files\core\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\vulkan\vk_allocator.cpp">
       <Filter>Source Files\core\vulkan</Filter>
     </ClCompile>
   </ItemGroup>

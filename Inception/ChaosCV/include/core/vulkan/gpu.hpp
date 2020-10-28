@@ -10,6 +10,10 @@ namespace chaos
 	CHAOS_API void CreateGPUInstance();
 	CHAOS_API void DestroyGPUInstance();
 
+    // get info
+    int GetGPUCount();
+    int GetDefaultGPUIndex();
+
 	class CHAOS_API GPUInfo
 	{
 	public:
@@ -94,4 +98,83 @@ namespace chaos
         int support_VK_EXT_memory_budget;
         int support_VK_EXT_queue_family_foreign;
 	};
+
+    const GPUInfo& GetGPUInfo(int device_index = GetDefaultGPUIndex());
+
+    class VkAllocator;
+    class CHAOS_API VulkanDevice
+    {
+    public:
+        VulkanDevice(int device_index = GetDefaultGPUIndex());
+
+        ~VulkanDevice();
+
+        const GPUInfo& info;
+
+        VkDevice GetDevice() const { return device; }
+
+
+
+        uint32_t FindMemoryIndex(uint32_t memory_type_bits, VkFlags required, VkFlags preferred, VkFlags preferred_not) const;
+        bool IsMappable(uint32_t memory_type_index) const;
+        bool IsCoherent(uint32_t memory_type_index) const;
+
+
+        // VK_KHR_bind_memory2
+        PFN_vkBindBufferMemory2KHR vkBindBufferMemory2KHR;
+        //PFN_vkBindImageMemory2KHR vkBindImageMemory2KHR;
+
+        // VK_KHR_descriptor_update_template
+        PFN_vkCreateDescriptorUpdateTemplateKHR vkCreateDescriptorUpdateTemplateKHR;
+        PFN_vkDestroyDescriptorUpdateTemplateKHR vkDestroyDescriptorUpdateTemplateKHR;
+        PFN_vkUpdateDescriptorSetWithTemplateKHR vkUpdateDescriptorSetWithTemplateKHR;
+
+        // VK_KHR_get_memory_requirements2
+        PFN_vkGetBufferMemoryRequirements2KHR vkGetBufferMemoryRequirements2KHR;
+        //PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2KHR;
+        //PFN_vkGetImageSparseMemoryRequirements2KHR vkGetImageSparseMemoryRequirements2KHR;
+
+        // VK_KHR_maintenance1
+        PFN_vkTrimCommandPoolKHR vkTrimCommandPoolKHR;
+
+        // VK_KHR_push_descriptor
+        PFN_vkCmdPushDescriptorSetWithTemplateKHR vkCmdPushDescriptorSetWithTemplateKHR;
+        PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR;
+
+        // VK_KHR_sampler_ycbcr_conversion
+        PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionKHR;
+        PFN_vkDestroySamplerYcbcrConversionKHR vkDestroySamplerYcbcrConversionKHR;
+
+        // VK_KHR_swapchain
+        PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR;
+        PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR;
+        PFN_vkQueuePresentKHR vkQueuePresentKHR;
+        //PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR;
+        //PFN_vkAcquireNextImageKHR vkAcquireNextImageKHR;
+
+    protected:
+        // device extension
+        void InitDeviceExtension();
+
+    private:
+        VkDevice device;
+
+        // hardware queue
+        mutable std::vector<VkQueue> compute_queues;
+        mutable std::vector<VkQueue> graphics_queues;
+        mutable std::vector<VkQueue> transfer_queues;
+
+        mutable std::mutex queue_lock;
+
+        // default blob allocator for each queue
+        mutable std::vector<VkAllocator*> blob_allocators;
+        mutable std::mutex blob_allocator_lock;
+
+        // default staging allocator for each queue
+        mutable std::vector<VkAllocator*> staging_allocators;
+        mutable std::mutex staging_allocator_lock;
+
+        // nearest sampler for texelfetch
+        VkSampler texelfetch_sampler;
+    };
 }

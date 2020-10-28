@@ -179,6 +179,7 @@
     <ClInclude Include="include\core\tensor.hpp" />
     <ClInclude Include="include\core\vec.hpp" />
     <ClInclude Include="include\core\vulkan\gpu.hpp" />
+    <ClInclude Include="include\core\vulkan\vk_allocator.hpp" />
     <ClInclude Include="include\dnn\layer.hpp" />
     <ClInclude Include="include\dnn\layers\binary_op.hpp" />
     <ClInclude Include="include\dnn\layers\innerproduct.hpp" />
@@ -199,6 +200,7 @@
     <ClCompile Include="src\core\log.cpp" />
     <ClCompile Include="src\core\tensor.cpp" />
     <ClCompile Include="src\core\vulkan\gpu.cpp" />
+    <ClCompile Include="src\core\vulkan\vk_allocator.cpp" />
     <ClCompile Include="src\dnn\layer.cpp" />
     <ClCompile Include="src\dnn\layers\binary_op.cpp" />
     <ClCompile Include="src\dnn\layers\innerproduct.cpp" />
