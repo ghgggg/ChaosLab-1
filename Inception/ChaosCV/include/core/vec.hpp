@@ -33,7 +33,7 @@ namespace chaos
 			Allocate(size);
 			for (size_t i = 0; i < sz; i++)
 			{
-				buf[i] = ptr[i];
+				buf[i] = static_cast<Type>(ptr[i]);
 			}
 		}
 

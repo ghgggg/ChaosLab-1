@@ -1,6 +1,7 @@
 #pragma once
 
 #include "def.hpp"
+#include "log.hpp"
 
 #include <intrin.h>
 
@@ -225,4 +226,5 @@ namespace chaos
 		std::list<std::pair<size_t, void*>> budgets;
 		std::list<std::pair<size_t, void*>> payouts;
 	};
+
 }

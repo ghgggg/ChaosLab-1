@@ -43,6 +43,12 @@
     <Filter Include="Source Files\metrics">
       <UniqueIdentifier>{4edbaf10-9816-408f-866d-854b22221613}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\core\vulkan">
+      <UniqueIdentifier>{ff75887d-1bd8-414f-b341-8f4914637059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\vulkan">
+      <UniqueIdentifier>{f01c1408-ec0d-4933-8f70-53605f7ca9d9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\core.hpp">
@@ -102,6 +108,9 @@
     <ClInclude Include="include\dnn\layers\permute.hpp">
       <Filter>Header Files\dnn\layers</Filter>
     </ClInclude>
+    <ClInclude Include="include\core\vulkan\gpu.hpp">
+      <Filter>Header Files\core\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\core.cpp">
@@ -140,9 +149,6 @@
     <ClCompile Include="src\dnn\model.cpp">
       <Filter>Source Files\dnn</Filter>
     </ClCompile>
-    <ClCompile Include="src\dbb\layers\innerproduct.cpp">
-      <Filter>Source Files\dnn\layers</Filter>
-    </ClCompile>
     <ClCompile Include="src\dnn\layers\noop.cpp">
       <Filter>Source Files\dnn\layers</Filter>
     </ClCompile>
@@ -151,6 +157,12 @@
     </ClCompile>
     <ClCompile Include="src\dnn\layers\permute.cpp">
       <Filter>Source Files\dnn\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dnn\layers\innerproduct.cpp">
+      <Filter>Source Files\dnn\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\vulkan\gpu.cpp">
+      <Filter>Source Files\core\vulkan</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
