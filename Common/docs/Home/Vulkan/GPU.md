@@ -19,6 +19,6 @@
  - `VkQueue`  
  功能为接收提交的任务，将任务按序由所属GPU硬件依次执行
  - `VkAllocator`  
- Vulkan内存池
+ Vulkan内存池，具体请参考[VkAllocator](/Home/Vulkan/VkAllocator)文档
  - `VkSampler`  
  暂时不清楚此对象的作用
