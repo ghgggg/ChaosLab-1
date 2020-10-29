@@ -21,4 +21,4 @@
  - `VkAllocator`  
  Vulkan内存池
  - `VkSampler`  
- 未知
+ 暂时不清楚此对象的作用
