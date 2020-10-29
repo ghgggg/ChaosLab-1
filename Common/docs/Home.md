@@ -1,1 +1,1 @@
-Learing Deep Learning
+Learning Deep Learning
