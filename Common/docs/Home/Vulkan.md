@@ -7,4 +7,6 @@
 
 在GPUInstance的过程中，获取ShaderInfo（以前的版本似乎是直接在CreateGPUInstance中CreateShaderModule）   
 
-如果给定一个Tensor，需要将数据上传到GPU显存中，那么在VkCompute中，需要一个Pipeline将数据上传，Pipeline会依据需要对Shader做CreateShaderModule   
+如果给定一个Tensor，需要将数据上传到GPU显存中，那么在VkCompute中，需要通过Recoder将数据上传  
+
+Pipeline应该是为了处理Shader的
