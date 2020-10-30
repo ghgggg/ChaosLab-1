@@ -178,8 +178,11 @@
     <ClInclude Include="include\core\log.hpp" />
     <ClInclude Include="include\core\tensor.hpp" />
     <ClInclude Include="include\core\vec.hpp" />
+    <ClInclude Include="include\core\vulkan\command.hpp" />
     <ClInclude Include="include\core\vulkan\gpu.hpp" />
+    <ClInclude Include="include\core\vulkan\pipeline.hpp" />
     <ClInclude Include="include\core\vulkan\vk_allocator.hpp" />
+    <ClInclude Include="include\core\vulkan\vk_tensor.hpp" />
     <ClInclude Include="include\dnn\layer.hpp" />
     <ClInclude Include="include\dnn\layers\binary_op.hpp" />
     <ClInclude Include="include\dnn\layers\innerproduct.hpp" />
@@ -189,6 +192,7 @@
     <ClInclude Include="include\dnn\model.hpp" />
     <ClInclude Include="include\dnn\net.hpp" />
     <ClInclude Include="include\dnn\option.hpp" />
+    <ClInclude Include="include\dnn\shader_factory.hpp" />
     <ClInclude Include="include\math\base.hpp" />
     <ClInclude Include="include\math\tensor_op.hpp" />
     <ClInclude Include="include\metrics\confusion.hpp" />
@@ -199,8 +203,11 @@
     <ClCompile Include="src\core\file.cpp" />
     <ClCompile Include="src\core\log.cpp" />
     <ClCompile Include="src\core\tensor.cpp" />
+    <ClCompile Include="src\core\vulkan\command.cpp" />
     <ClCompile Include="src\core\vulkan\gpu.cpp" />
+    <ClCompile Include="src\core\vulkan\pipeline.cpp" />
     <ClCompile Include="src\core\vulkan\vk_allocator.cpp" />
+    <ClCompile Include="src\core\vulkan\vk_tensor.cpp" />
     <ClCompile Include="src\dnn\layer.cpp" />
     <ClCompile Include="src\dnn\layers\binary_op.cpp" />
     <ClCompile Include="src\dnn\layers\innerproduct.cpp" />
@@ -209,6 +216,7 @@
     <ClCompile Include="src\dnn\layer_declaration.cpp" />
     <ClCompile Include="src\dnn\layer_factory.cpp" />
     <ClCompile Include="src\dnn\model.cpp" />
+    <ClCompile Include="src\dnn\shader_factory.cpp" />
     <ClCompile Include="src\math\lapack.cpp" />
     <ClCompile Include="src\math\tensor_op.cpp" />
     <ClCompile Include="src\metrics\confusion.cpp" />

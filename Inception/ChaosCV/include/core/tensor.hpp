@@ -6,6 +6,7 @@
 namespace chaos
 {
 	class OutputArray;
+	class VkTensor;
 	class CHAOS_API Tensor
 	{
 	public:
@@ -19,6 +20,7 @@ namespace chaos
 		Tensor& operator=(const Tensor& t);
 
 		void Create(const Shape& _shape, const Depth& _depth, const Packing& _packing, Allocator* _allocator);
+		void CreateLike(const VkTensor& t, Allocator* allocator);
 
 		//void CopyTo(Tensor& t) const;
 		void CopyTo(const OutputArray& arr, Allocator* allocator = nullptr) const;

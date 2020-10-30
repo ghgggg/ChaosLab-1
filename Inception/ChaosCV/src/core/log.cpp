@@ -56,7 +56,10 @@ namespace chaos
 	{
 		Flush();
 		// if FATAL, then abort
-		if (severity == LogSeverity::FATAL) abort();
+		if (severity == LogSeverity::FATAL)
+		{
+			abort();
+		}
 	}
 
 	std::ostream& chaos::LogMessage::stream()
@@ -66,7 +69,8 @@ namespace chaos
 
 	void LogMessage::Flush()
 	{
-		mtx.lock();
+		std::lock_guard lock(mtx);
+		//mtx.lock();
 		//if (severity >= log_level)
 		{
 			std::string message = message_data.str();
@@ -75,7 +79,7 @@ namespace chaos
 			std::cout << message << std::endl;
 			//SetConsoleTextColor(0x07); // Reset to 0x07
 		}
-		mtx.unlock();
+		//mtx.unlock();
 	}
 
 	std::ostream& operator<<(std::ostream& stream, const std::vector<std::string>& list)

@@ -7,7 +7,6 @@
 namespace chaos
 {
     class VulkanDevice;
-
     class VkBufferMemory
     {
     public:
@@ -29,7 +28,7 @@ namespace chaos
     };
 
 
-    class VkAllocator
+    class CHAOS_API VkAllocator
     {
     public:
         VkAllocator(const VulkanDevice* _vkdev);
@@ -57,7 +56,7 @@ namespace chaos
         //VkImageView CreateImageView(VkImageViewType type, VkImage image, VkFormat format);
     };
 
-    class VkBlobAllocator : public VkAllocator
+    class CHAOS_API VkBlobAllocator : public VkAllocator
     {
     public:
         VkBlobAllocator(const VulkanDevice* vkdev);
@@ -81,7 +80,7 @@ namespace chaos
     };
 
 
-    class VkStagingAllocator : public VkAllocator
+    class CHAOS_API VkStagingAllocator : public VkAllocator
     {
     public:
         VkStagingAllocator(const VulkanDevice* vkdev);

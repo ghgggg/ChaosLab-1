@@ -1,5 +1,7 @@
 #include "core/tensor.hpp"
 
+#include "core/vulkan/vk_tensor.hpp"
+
 namespace chaos
 {
 	
@@ -68,6 +70,11 @@ namespace chaos
 			ref_cnt = (int*)(((uchar*)data) + size);
 			*ref_cnt = 1;
 		}
+	}
+
+	void Tensor::CreateLike(const VkTensor& t, Allocator* allocator)
+	{
+		Create(t.shape, t.depth, t.packing, allocator);
 	}
 
 	void Tensor::Release()

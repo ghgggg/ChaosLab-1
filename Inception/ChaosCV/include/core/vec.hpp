@@ -255,7 +255,25 @@ namespace chaos
 			return _steps;
 		}
 
-		
+		uint GetX() const // w
+		{
+			if (empty()) return 0;
+			return buf[sz - 1LL];
+		}
+
+		uint GetY() const
+		{
+			if (empty()) return 0;
+			if (sz == 1) return 1;
+			return buf[sz - 2LL];
+		}
+
+		uint GetZ() const
+		{
+			if (empty()) return 0;
+			if (sz == 1 || sz == 2) return 1;
+			return std::accumulate(buf, buf + sz - 3, 1, std::multiplies<uint>());
+		}
 	};
 
 }

@@ -114,6 +114,18 @@
     <ClInclude Include="include\core\vulkan\vk_allocator.hpp">
       <Filter>Header Files\core\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="include\core\vulkan\vk_tensor.hpp">
+      <Filter>Header Files\core\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\vulkan\pipeline.hpp">
+      <Filter>Header Files\core\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\vulkan\command.hpp">
+      <Filter>Header Files\core\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="include\dnn\shader_factory.hpp">
+      <Filter>Header Files\dnn</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\core.cpp">
@@ -168,6 +180,18 @@
       <Filter>Source Files\core\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\core\vulkan\vk_allocator.cpp">
+      <Filter>Source Files\core\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\vulkan\vk_tensor.cpp">
+      <Filter>Source Files\core\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\vulkan\command.cpp">
+      <Filter>Source Files\core\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dnn\shader_factory.cpp">
+      <Filter>Source Files\dnn</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\vulkan\pipeline.cpp">
       <Filter>Source Files\core\vulkan</Filter>
     </ClCompile>
   </ItemGroup>

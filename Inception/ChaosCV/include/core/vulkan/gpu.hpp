@@ -6,13 +6,26 @@
 
 namespace chaos
 {
+    union VkSpecializationType
+    {
+        int i;
+        float f;
+        uint32_t u;
+    };
+
+    union VkConstantType
+    {
+        int i;
+        float f;
+    };
+
 	// instance
 	CHAOS_API void CreateGPUInstance();
 	CHAOS_API void DestroyGPUInstance();
 
     // get info
-    int GetGPUCount();
-    int GetDefaultGPUIndex();
+    CHAOS_API int GetGPUCount();
+    CHAOS_API int GetDefaultGPUIndex();
 
 	class CHAOS_API GPUInfo
 	{
@@ -99,9 +112,11 @@ namespace chaos
         int support_VK_EXT_queue_family_foreign;
 	};
 
-    const GPUInfo& GetGPUInfo(int device_index = GetDefaultGPUIndex());
+    CHAOS_API const GPUInfo& GetGPUInfo(int device_index = GetDefaultGPUIndex());
 
     class VkAllocator;
+    class Pipeline;
+    class PipelineCache;
     class CHAOS_API VulkanDevice
     {
     public:
@@ -113,12 +128,27 @@ namespace chaos
 
         VkDevice GetDevice() const { return device; }
 
+        VkShaderModule CreateShaderModule(int shader_type_index, uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z) const;
+        VkShaderModule CompileShaderModule(const uint32_t* spv_data, size_t spv_data_size) const;
 
+        // with fixed workgroup size
+        VkShaderModule CompileShaderModule(const uint32_t* spv_data, size_t spv_data_size, uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z) const;
+
+        // helper for creating pipeline
+        void CreateDescriptorsetLayout(int binding_count, const int* binding_types, VkDescriptorSetLayout* descriptor_set_layout) const;
+        void CreatePipelineLayout(int push_constant_count, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout* pipeline_layout) const;
+        void CreatePipeline(VkShaderModule shader_module, VkPipelineLayout pipeline_layout, const std::vector<VkSpecializationType>& specializations, VkPipeline* pipeline) const;
+        void CreateDescriptorUpdateTemplate(int binding_count, const int* binding_types, VkDescriptorSetLayout descriptor_set_layout, VkPipelineLayout pipeline_layout, VkDescriptorUpdateTemplateKHR* descriptor_update_template) const;
 
         uint32_t FindMemoryIndex(uint32_t memory_type_bits, VkFlags required, VkFlags preferred, VkFlags preferred_not) const;
         bool IsMappable(uint32_t memory_type_index) const;
         bool IsCoherent(uint32_t memory_type_index) const;
 
+        VkQueue AcquireQueue(uint32_t queue_family_index) const;
+        void ReclaimQueue(uint32_t queue_family_index, VkQueue queue) const;
+
+        const VkSampler* immutable_texelfetch_sampler() const { return &texelfetch_sampler; }
+        const PipelineCache* GetPipelineCache() const { return pipeline_cache; }
 
         // VK_KHR_bind_memory2
         PFN_vkBindBufferMemory2KHR vkBindBufferMemory2KHR;
@@ -176,5 +206,28 @@ namespace chaos
 
         // nearest sampler for texelfetch
         VkSampler texelfetch_sampler;
+
+        // device-wide pipeline cache
+        PipelineCache* pipeline_cache;
     };
+
+    CHAOS_API VulkanDevice* GetGPUDevice(int device_index = GetDefaultGPUIndex());
+
+    // info from spirv
+    class ShaderInfo
+    {
+    public:
+        int specialization_count;
+        int binding_count;
+        int push_constant_count;
+
+        // 0 = null
+        // 1 = storage buffer
+        // 2 = storage image
+        // 3 = combined image sampler
+        int binding_types[16]; // 16 is large enough I think ...
+    };
+
+    const ShaderInfo& GetShaderInfo(int shader_type_index);
+    void ResolveShaderInfo(const uint32_t* spv_data, size_t spv_data_size, ShaderInfo& shader_info);
 }
