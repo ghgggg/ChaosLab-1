@@ -21,4 +21,7 @@
 |Variable|59|-|
 |Decorate|71|-|
 
+# 其他
+gl_GlobalInvocationID是当前执行单元在全局工作组中的位置的一种有效的三维索引
+
 
