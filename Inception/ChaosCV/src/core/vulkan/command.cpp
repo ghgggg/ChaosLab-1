@@ -168,12 +168,7 @@ namespace chaos
         }
     }
 
-    void VkCompute::RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& bindings, const std::vector<VkConstantType>& constants, const VkTensor& dispatcher)
-    {
-
-    }
-
-    void VkCompute::RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& buffer_bindings, const std::vector<VkConstantType>& constants, const Tensor& dispatcher)
+    void VkCompute::RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& buffer_bindings, const std::vector<VkConstantType>& constants, const Shape& dispatcher)
     {
         const int buffer_binding_count = (int)buffer_bindings.size();
         //const int image_binding_count = (int)image_bindings.size();
@@ -460,9 +455,9 @@ namespace chaos
 
         // record dispatch
         {
-            uint32_t group_count_x = (dispatcher.shape.GetX() + pipeline->local_size_x - 1) / pipeline->local_size_x;
-            uint32_t group_count_y = (dispatcher.shape.GetY() + pipeline->local_size_y - 1) / pipeline->local_size_y;
-            uint32_t group_count_z = (dispatcher.shape.GetZ() + pipeline->local_size_z - 1) / pipeline->local_size_z;
+            uint32_t group_count_x = (dispatcher.GetX() + pipeline->local_size_x - 1) / pipeline->local_size_x;
+            uint32_t group_count_y = (dispatcher.GetY() + pipeline->local_size_y - 1) / pipeline->local_size_y;
+            uint32_t group_count_z = (dispatcher.GetZ() + pipeline->local_size_z - 1) / pipeline->local_size_z;
 
             if (vkdev->info.support_VK_KHR_push_descriptor)
             {
@@ -679,5 +674,446 @@ namespace chaos
     {
         VkResult ret = vkEndCommandBuffer(compute_command_buffer);
         CHECK_EQ(ret, VK_SUCCESS) << Format("vkEndCommandBuffer failed %d", ret);
+    }
+
+    VkTransfer::VkTransfer(const VulkanDevice* vkdev) : vkdev(vkdev)
+    {
+        compute_command_pool = 0;
+        transfer_command_pool = 0;
+
+        upload_command_buffer = 0;
+        compute_command_buffer = 0;
+
+        upload_compute_semaphore = 0;
+
+        upload_command_fence = 0;
+        compute_command_fence = 0;
+
+        Init();
+    }
+    VkTransfer::~VkTransfer()
+    {
+        vkDestroyFence(vkdev->GetDevice(), compute_command_fence, 0);
+
+        vkFreeCommandBuffers(vkdev->GetDevice(), compute_command_pool, 1, &compute_command_buffer);
+        vkDestroyCommandPool(vkdev->GetDevice(), compute_command_pool, 0);
+
+        if (!vkdev->info.unified_compute_transfer_queue)
+        {
+            vkDestroyFence(vkdev->GetDevice(), upload_command_fence, 0);
+
+            vkDestroySemaphore(vkdev->GetDevice(), upload_compute_semaphore, 0);
+
+            vkFreeCommandBuffers(vkdev->GetDevice(), transfer_command_pool, 1, &upload_command_buffer);
+            vkDestroyCommandPool(vkdev->GetDevice(), transfer_command_pool, 0);
+        }
+    }
+
+    void VkTransfer::RecordUpload(const Tensor& src, VkTensor& dst, const dnn::Option& opt)
+    {
+        Tensor src_flattened = src;
+
+        // create dst
+        dst.CreateLike(src_flattened, opt.blob_vkallocator);
+
+        if (dst.empty())
+        {
+            return;
+        }
+
+        if (dst.allocator->mappable)
+        {
+            // memcpy src_flattened to device
+            memcpy(dst.mapped_data(), src_flattened.data, src_flattened.shape[0] * src_flattened.steps[0] * src_flattened.depth * src_flattened.packing);
+            dst.allocator->Flush(dst.data);
+
+            // barrier device host-write @ null to shader-read @ compute
+            {
+                VkBufferMemoryBarrier barrier;
+                barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+                barrier.pNext = 0;
+                barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.buffer = dst.buffer();
+                barrier.offset = dst.buffer_offset();
+                barrier.size = dst.buffer_capacity();
+
+                VkPipelineStageFlags src_stage = VK_PIPELINE_STAGE_HOST_BIT;
+                VkPipelineStageFlags dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+                vkCmdPipelineBarrier(compute_command_buffer, src_stage, dst_stage, 0, 0, 0, 1, &barrier, 0, 0);
+            }
+
+            // mark device shader-readwrite @ compute
+            dst.data->access_flags = VK_ACCESS_SHADER_READ_BIT;
+            dst.data->stage_flags = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+            return;
+        }
+
+        // create staging
+        VkTensor dst_staging;
+        dst_staging.CreateLike(src_flattened, opt.staging_vkallocator);
+
+        // memcpy src_flattened to staging
+        memcpy(dst_staging.mapped_data(), src_flattened.data, src_flattened.shape[0]* src_flattened.steps[0]* src_flattened.depth * src_flattened.packing); //src_flattened.total() * src_flattened.elemsize
+        dst_staging.allocator->Flush(dst_staging.data);
+
+        VkCommandBuffer command_buffer;
+        if (vkdev->info.unified_compute_transfer_queue)
+        {
+            command_buffer = compute_command_buffer;
+        }
+        else
+        {
+            command_buffer = upload_command_buffer;
+        }
+
+        // barrier staging host-write @ null to transfer-read @ queue
+        {
+            VkBufferMemoryBarrier barrier;
+            barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            barrier.pNext = 0;
+            barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.buffer = dst_staging.buffer();
+            barrier.offset = dst_staging.buffer_offset();
+            barrier.size = dst_staging.buffer_capacity();
+
+            VkPipelineStageFlags src_stage = VK_PIPELINE_STAGE_HOST_BIT;
+            VkPipelineStageFlags dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+            vkCmdPipelineBarrier(command_buffer, src_stage, dst_stage, 0, 0, 0, 1, &barrier, 0, 0);
+        }
+
+        // record staging to device
+        {
+            VkBufferCopy region;
+            region.srcOffset = dst_staging.buffer_offset();
+            region.dstOffset = dst.buffer_offset();
+            region.size = std::min(dst_staging.buffer_capacity(), dst.buffer_capacity());
+
+            vkCmdCopyBuffer(command_buffer, dst_staging.buffer(), dst.buffer(), 1, &region);
+        }
+
+        if (vkdev->info.unified_compute_transfer_queue)
+        {
+            // barrier device transfer-write @ compute to shader-read @ compute
+            {
+                VkBufferMemoryBarrier barrier;
+                barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+                barrier.pNext = 0;
+                barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.buffer = dst.buffer();
+                barrier.offset = dst.buffer_offset();
+                barrier.size = dst.buffer_capacity();
+
+                VkPipelineStageFlags src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                VkPipelineStageFlags dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+                vkCmdPipelineBarrier(command_buffer, src_stage, dst_stage, 0, 0, 0, 1, &barrier, 0, 0);
+            }
+        }
+        else
+        {
+            // queue ownership transfer transfer-write @ transfer to shader-read @ compute
+
+            // release
+            {
+                VkBufferMemoryBarrier barrier;
+                barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+                barrier.pNext = 0;
+                barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                barrier.dstAccessMask = 0;
+                barrier.srcQueueFamilyIndex = vkdev->info.transfer_queue_family_index;
+                barrier.dstQueueFamilyIndex = vkdev->info.compute_queue_family_index;
+                barrier.buffer = dst.buffer();
+                barrier.offset = dst.buffer_offset();
+                barrier.size = dst.buffer_capacity();
+
+                VkPipelineStageFlags src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                VkPipelineStageFlags dst_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+                vkCmdPipelineBarrier(upload_command_buffer, src_stage, dst_stage, 0, 0, 0, 1, &barrier, 0, 0);
+            }
+
+            // acquire
+            {
+                VkBufferMemoryBarrier barrier;
+                barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+                barrier.pNext = 0;
+                barrier.srcAccessMask = 0;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                barrier.srcQueueFamilyIndex = vkdev->info.transfer_queue_family_index;
+                barrier.dstQueueFamilyIndex = vkdev->info.compute_queue_family_index;
+                barrier.buffer = dst.buffer();
+                barrier.offset = dst.buffer_offset();
+                barrier.size = dst.buffer_capacity();
+
+                VkPipelineStageFlags src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                VkPipelineStageFlags dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+                vkCmdPipelineBarrier(compute_command_buffer, src_stage, dst_stage, 0, 0, 0, 1, &barrier, 0, 0);
+            }
+        }
+
+        // mark device shader-readwrite @ compute
+        dst.data->access_flags = VK_ACCESS_SHADER_READ_BIT;
+        dst.data->stage_flags = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+        // stash staging
+        upload_staging_buffers.push_back(dst_staging);
+    }
+
+    void VkTransfer::SubmitAndWait()
+    {
+        // end command buffer
+        {
+            EndCommandBuffer();
+        }
+
+        VkQueue compute_queue = vkdev->AcquireQueue(vkdev->info.compute_queue_family_index);
+        CHECK_NE(compute_queue, 0) << "out of compute queue";
+
+        if (vkdev->info.unified_compute_transfer_queue)
+        {
+            // submit compute
+            {
+                VkSubmitInfo submitInfo;
+                submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                submitInfo.pNext = 0;
+                submitInfo.waitSemaphoreCount = 0;
+                submitInfo.pWaitSemaphores = 0;
+                submitInfo.pWaitDstStageMask = 0;
+                submitInfo.commandBufferCount = 1;
+                submitInfo.pCommandBuffers = &compute_command_buffer;
+                submitInfo.signalSemaphoreCount = 0;
+                submitInfo.pSignalSemaphores = 0;
+
+                VkResult ret = vkQueueSubmit(compute_queue, 1, &submitInfo, compute_command_fence);
+                CHECK_EQ(ret, VK_SUCCESS) << Format("vkQueueSubmit failed %d", ret);
+                //if (ret != VK_SUCCESS)
+                //{
+                //    NCNN_LOGE("vkQueueSubmit failed %d", ret);
+                //    vkdev->reclaim_queue(vkdev->info.compute_queue_family_index, compute_queue);
+                //    return -1;
+                //}
+            }
+        }
+        else
+        {
+            VkQueue transfer_queue = vkdev->AcquireQueue(vkdev->info.transfer_queue_family_index);
+            CHECK_NE(compute_queue, 0) << "out of compute queue";
+            //if (transfer_queue == 0)
+            //{
+            //    NCNN_LOGE("out of transfer queue");
+            //    vkdev->reclaim_queue(vkdev->info.compute_queue_family_index, compute_queue);
+            //    return -1;
+            //}
+
+            // submit upload compute
+            {
+                VkSubmitInfo submitInfo;
+                submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                submitInfo.pNext = 0;
+                submitInfo.waitSemaphoreCount = 0;
+                submitInfo.pWaitSemaphores = 0;
+                submitInfo.pWaitDstStageMask = 0;
+                submitInfo.commandBufferCount = 1;
+                submitInfo.pCommandBuffers = &upload_command_buffer;
+                submitInfo.signalSemaphoreCount = 1;
+                submitInfo.pSignalSemaphores = &upload_compute_semaphore;
+
+                VkResult ret = vkQueueSubmit(transfer_queue, 1, &submitInfo, upload_command_fence);
+                CHECK_EQ(ret, VK_SUCCESS) << Format("vkQueueSubmit failed %d", ret);
+                //if (ret != VK_SUCCESS)
+                //{
+                //    NCNN_LOGE("vkQueueSubmit failed %d", ret);
+                //    vkdev->reclaim_queue(vkdev->info.transfer_queue_family_index, transfer_queue);
+                //    vkdev->reclaim_queue(vkdev->info.compute_queue_family_index, compute_queue);
+                //    return -1;
+                //}
+            }
+            {
+                VkPipelineStageFlags wait_dst_stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT; // FIXME
+
+                VkSubmitInfo submitInfo;
+                submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                submitInfo.pNext = 0;
+                submitInfo.waitSemaphoreCount = 1;
+                submitInfo.pWaitSemaphores = &upload_compute_semaphore;
+                submitInfo.pWaitDstStageMask = &wait_dst_stage;
+                submitInfo.commandBufferCount = 1;
+                submitInfo.pCommandBuffers = &compute_command_buffer;
+                submitInfo.signalSemaphoreCount = 0;
+                submitInfo.pSignalSemaphores = 0;
+
+                VkResult ret = vkQueueSubmit(compute_queue, 1, &submitInfo, compute_command_fence);
+                CHECK_EQ(ret, VK_SUCCESS) << Format("vkQueueSubmit failed %d", ret);
+                //if (ret != VK_SUCCESS)
+                //{
+                //    NCNN_LOGE("vkQueueSubmit failed %d", ret);
+                //    vkdev->reclaim_queue(vkdev->info.transfer_queue_family_index, transfer_queue);
+                //    vkdev->reclaim_queue(vkdev->info.compute_queue_family_index, compute_queue);
+                //    return -1;
+                //}
+            }
+
+            vkdev->ReclaimQueue(vkdev->info.transfer_queue_family_index, transfer_queue);
+        }
+
+        vkdev->ReclaimQueue(vkdev->info.compute_queue_family_index, compute_queue);
+
+        // wait
+        if (vkdev->info.unified_compute_transfer_queue)
+        {
+            VkResult ret = vkWaitForFences(vkdev->GetDevice(), 1, &compute_command_fence, VK_TRUE, UINT64_MAX);
+            CHECK_EQ(ret, VK_SUCCESS) << Format("vkWaitForFences failed %d", ret);
+        }
+        else
+        {
+            VkFence fences[2] = { upload_command_fence, compute_command_fence };
+
+            VkResult ret = vkWaitForFences(vkdev->GetDevice(), 2, fences, VK_TRUE, UINT64_MAX);
+            CHECK_EQ(ret, VK_SUCCESS) << Format("vkWaitForFences failed %d", ret);
+        }
+    }
+
+    void VkTransfer::Init()
+    {
+        // compute_command_pool
+        {
+            VkCommandPoolCreateInfo commandPoolCreateInfo;
+            commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            commandPoolCreateInfo.pNext = 0;
+            commandPoolCreateInfo.flags = 0;
+            commandPoolCreateInfo.queueFamilyIndex = vkdev->info.compute_queue_family_index;
+
+            VkResult ret = vkCreateCommandPool(vkdev->GetDevice(), &commandPoolCreateInfo, 0, &compute_command_pool);
+            CHECK_EQ(ret, VK_SUCCESS) << Format("vkCreateCommandPool failed %d", ret);
+        }
+
+        // compute_command_buffer
+        {
+            VkCommandBufferAllocateInfo commandBufferAllocateInfo;
+            commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            commandBufferAllocateInfo.pNext = 0;
+            commandBufferAllocateInfo.commandPool = compute_command_pool;
+            commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            commandBufferAllocateInfo.commandBufferCount = 1;
+
+            VkResult ret = vkAllocateCommandBuffers(vkdev->GetDevice(), &commandBufferAllocateInfo, &compute_command_buffer);
+            CHECK_EQ(ret, VK_SUCCESS) << Format("vkAllocateCommandBuffers failed %d", ret);
+        }
+
+        // compute_command_fence
+        {
+            VkFenceCreateInfo fenceCreateInfo;
+            fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+            fenceCreateInfo.pNext = 0;
+            fenceCreateInfo.flags = 0;
+
+            VkResult ret = vkCreateFence(vkdev->GetDevice(), &fenceCreateInfo, 0, &compute_command_fence);
+            CHECK_EQ(ret, VK_SUCCESS) << Format("vkCreateFence failed %d", ret);
+        }
+
+        if (!vkdev->info.unified_compute_transfer_queue)
+        {
+            // transfer_command_pool
+            {
+                VkCommandPoolCreateInfo commandPoolCreateInfo;
+                commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+                commandPoolCreateInfo.pNext = 0;
+                commandPoolCreateInfo.flags = 0;
+                commandPoolCreateInfo.queueFamilyIndex = vkdev->info.transfer_queue_family_index;
+
+                VkResult ret = vkCreateCommandPool(vkdev->GetDevice(), &commandPoolCreateInfo, 0, &transfer_command_pool);
+                CHECK_EQ(ret, VK_SUCCESS) << Format("vkCreateCommandPool failed %d", ret);
+            }
+
+            // upload_command_buffer
+            {
+                VkCommandBufferAllocateInfo commandBufferAllocateInfo;
+                commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+                commandBufferAllocateInfo.pNext = 0;
+                commandBufferAllocateInfo.commandPool = transfer_command_pool;
+                commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                commandBufferAllocateInfo.commandBufferCount = 1;
+
+                VkResult ret = vkAllocateCommandBuffers(vkdev->GetDevice(), &commandBufferAllocateInfo, &upload_command_buffer);
+                CHECK_EQ(ret, VK_SUCCESS) << Format("vkAllocateCommandBuffers failed %d", ret);
+            }
+
+            // upload_compute_semaphore
+            {
+                VkSemaphoreCreateInfo semaphoreCreateInfo;
+                semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+                semaphoreCreateInfo.pNext = 0;
+                semaphoreCreateInfo.flags = 0;
+
+                VkResult ret = vkCreateSemaphore(vkdev->GetDevice(), &semaphoreCreateInfo, 0, &upload_compute_semaphore);
+                CHECK_EQ(ret, VK_SUCCESS) << Format("vkCreateSemaphore failed %d", ret);
+            }
+
+            // upload_command_fence
+            {
+                VkFenceCreateInfo fenceCreateInfo;
+                fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+                fenceCreateInfo.pNext = 0;
+                fenceCreateInfo.flags = 0;
+
+                VkResult ret = vkCreateFence(vkdev->GetDevice(), &fenceCreateInfo, 0, &upload_command_fence);
+                CHECK_EQ(ret, VK_SUCCESS) << Format("vkCreateFence failed %d", ret);
+            }
+        }
+
+        BeginCommandBuffer();
+    }
+
+    void VkTransfer::BeginCommandBuffer()
+    {
+        {
+            VkCommandBufferBeginInfo commandBufferBeginInfo;
+            commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            commandBufferBeginInfo.pNext = 0;
+            commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+            commandBufferBeginInfo.pInheritanceInfo = 0;
+
+            VkResult ret = vkBeginCommandBuffer(compute_command_buffer, &commandBufferBeginInfo);
+            CHECK_EQ(ret, VK_SUCCESS) << Format("vkBeginCommandBuffer failed %d", ret);
+        }
+
+        if (!vkdev->info.unified_compute_transfer_queue)
+        {
+            VkCommandBufferBeginInfo commandBufferBeginInfo;
+            commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            commandBufferBeginInfo.pNext = 0;
+            commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+            commandBufferBeginInfo.pInheritanceInfo = 0;
+
+            VkResult ret = vkBeginCommandBuffer(upload_command_buffer, &commandBufferBeginInfo);
+            CHECK_EQ(ret, VK_SUCCESS) << Format("vkBeginCommandBuffer failed %d", ret);
+        }
+    }
+
+    void VkTransfer::EndCommandBuffer()
+    {
+        {
+            VkResult ret = vkEndCommandBuffer(compute_command_buffer);
+            CHECK_EQ(ret, VK_SUCCESS) << Format("vkEndCommandBuffer failed %d", ret);
+        }
+
+        if (!vkdev->info.unified_compute_transfer_queue)
+        {
+            VkResult ret = vkEndCommandBuffer(upload_command_buffer);
+            CHECK_EQ(ret, VK_SUCCESS) << Format("vkEndCommandBuffer failed %d", ret);
+        }
     }
 }

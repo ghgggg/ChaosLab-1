@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <vector>
+
 namespace chaos
 {
 	namespace dnn { class Option; }
@@ -20,8 +22,7 @@ namespace chaos
         void RecordUpload(const Tensor& src, VkTensor& dst, const dnn::Option& opt);
         void RecordDownload(const VkTensor& src, Tensor& dst, const dnn::Option& opt);
 
-        void RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& bindings, const std::vector<VkConstantType>& constants, const VkTensor& dispatcher);
-        void RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& buffer_bindings, const std::vector<VkConstantType>& constants, const Tensor& dispatcher);
+        void RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& buffer_bindings, const std::vector<VkConstantType>& constants, const Shape& dispatcher);
 
         void SubmitAndWait();
 
@@ -123,9 +124,15 @@ namespace chaos
         VkTransfer(const VulkanDevice* vkdev);
         ~VkTransfer();
 
-		void RecordUpload(const Tensor& src, VkTensor& dst, const dnn::Option& opt, bool flatten = true);
+		void RecordUpload(const Tensor& src, VkTensor& dst, const dnn::Option& opt);
 
-        int SubmitAndWait();
+        void SubmitAndWait();
+
+    protected:
+        void Init();
+        void BeginCommandBuffer();
+        void EndCommandBuffer();
+
 	protected:
 		const VulkanDevice* vkdev;
 
