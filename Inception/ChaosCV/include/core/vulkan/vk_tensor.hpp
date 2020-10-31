@@ -4,6 +4,8 @@
 
 #include "vk_allocator.hpp"
 
+#include <vulkan/vulkan.hpp>
+
 namespace chaos
 {
 	class VkBufferMemory;

@@ -126,7 +126,7 @@ namespace chaos
 
         void Create(int shader_type_index, const dnn::Option& opt, const std::vector<VkSpecializationType>& specializations);
 
-    private:
+
         const VulkanDevice* vkdev;
 
         VkShaderModule shader_module;

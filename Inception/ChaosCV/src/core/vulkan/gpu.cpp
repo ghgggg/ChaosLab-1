@@ -1,5 +1,6 @@
 #include "core/vulkan/gpu.hpp"
 #include "core/vulkan/vk_allocator.hpp"
+#include "core/vulkan/vk_tensor.hpp"
 
 #include "dnn/shader_factory.hpp"
 
@@ -26,8 +27,11 @@ namespace chaos
 	static GPUInfo g_gpu_infos[MAX_GPU_COUNT];
 
 	// default vulkan device
-	static std::mutex g_default_vkdev_lock;
-	static VulkanDevice* g_default_vkdev[MAX_GPU_COUNT] = { 0 };
+	static std::mutex g_devices_lock;
+	static VulkanDevice* g_devices[MAX_GPU_COUNT] = { 0 };
+
+	static const auto& layer_shader_registry = dnn::LayerShaderRegistry::Registry();
+	static std::vector<ShaderInfo> layer_shader_infos(layer_shader_registry.size());
 
 	int support_VK_KHR_external_memory_capabilities = 0;
 	int support_VK_KHR_get_physical_device_properties2 = 0;
@@ -652,11 +656,11 @@ namespace chaos
 		// the default gpu device
 		g_default_gpu_index = FindDefaultVulkanDeviceIndex();
 
-		//// resolve shader info
-		//for (int i = 0; i < layer_shader_registry_entry_count; i++)
-		//{
-		//	resolve_shader_info(layer_shader_registry[i].spv_data, layer_shader_registry[i].spv_data_size, layer_shader_infos[i]);
-		//}
+		// resolve shader info
+		for (size_t i = 0; i < layer_shader_registry.size(); i++)
+		{
+			ResolveShaderInfo(layer_shader_registry[i].spv_data, layer_shader_registry[i].spv_data_size, layer_shader_infos[i]);
+		}
 	}
 
 	void DestroyGPUInstance()
@@ -667,8 +671,8 @@ namespace chaos
 
 		for (int i = 0; i < MAX_GPU_COUNT; i++)
 		{
-			delete g_default_vkdev[i];
-			g_default_vkdev[i] = 0;
+			delete g_devices[i];
+			g_devices[i] = 0;
 		}
 
 		vkDestroyInstance(g_instance, 0);
@@ -954,8 +958,6 @@ namespace chaos
 		vkDestroyDevice(device, 0);
 	}
 
-	static const auto& layer_shader_registry = dnn::LayerShaderRegistry::Registry();
-	//static ShaderInfo layer_shader_infos;
 
 	VkShaderModule VulkanDevice::CreateShaderModule(int shader_type_index, uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z) const
 	{
@@ -1476,25 +1478,34 @@ namespace chaos
 		LOG(FATAL) << Format("FATAL ERROR! reclaim_queue get wild queue %u %p", queue_family_index, queue);
 	}
 
+	VkTensor VulkanDevice::GetDummyBuffer() const
+	{
+		return dummy_buffer;
+	}
+	const PipelineCache* VulkanDevice::GetPipelineCache() const
+	{
+		return pipeline_cache;
+	}
+
 
 	VulkanDevice* GetGPUDevice(int device_index)
 	{
 		TryCreateGPUInstance();
 
-		CHECK_LT((uint)device_index, g_gpu_count);
+		CHECK_LT((uint)device_index, (uint)g_gpu_count);
 
-		std::lock_guard lock(g_default_vkdev_lock);
+		std::lock_guard lock(g_devices_lock);
 
-		if (not g_default_vkdev[device_index])
-			g_default_vkdev[device_index] = new VulkanDevice(device_index);
+		if (not g_devices[device_index])
+			g_devices[device_index] = new VulkanDevice(device_index);
 
-		return g_default_vkdev[device_index];
+		return g_devices[device_index];
 	}
 
 	const ShaderInfo& GetShaderInfo(int shader_type_index)
 	{
-		return ShaderInfo();
-		//return layer_shader_infos[shader_type_index];
+		CHECK_LT((uint)shader_type_index, (uint)layer_shader_infos.size()) << Format("no such shader module %d", shader_type_index);
+		return layer_shader_infos[shader_type_index];
 	}
 
 	void ResolveShaderInfo(const uint32_t* spv_data, size_t spv_data_size, ShaderInfo& shader_info)

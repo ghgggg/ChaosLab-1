@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/core.hpp"
+#include "vk_tensor.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -115,6 +116,7 @@ namespace chaos
     CHAOS_API const GPUInfo& GetGPUInfo(int device_index = GetDefaultGPUIndex());
 
     class VkAllocator;
+    class VkTensor;
     class Pipeline;
     class PipelineCache;
     class CHAOS_API VulkanDevice
@@ -148,7 +150,8 @@ namespace chaos
         void ReclaimQueue(uint32_t queue_family_index, VkQueue queue) const;
 
         const VkSampler* immutable_texelfetch_sampler() const { return &texelfetch_sampler; }
-        const PipelineCache* GetPipelineCache() const { return pipeline_cache; }
+        VkTensor GetDummyBuffer() const;
+        const PipelineCache* GetPipelineCache() const;
 
         // VK_KHR_bind_memory2
         PFN_vkBindBufferMemory2KHR vkBindBufferMemory2KHR;
@@ -206,6 +209,9 @@ namespace chaos
 
         // nearest sampler for texelfetch
         VkSampler texelfetch_sampler;
+
+        //VkAllocator* dummy_allocator;
+        VkTensor dummy_buffer;
 
         // device-wide pipeline cache
         PipelineCache* pipeline_cache;

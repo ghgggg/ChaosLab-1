@@ -20,7 +20,7 @@ namespace chaos
         void RecordUpload(const Tensor& src, VkTensor& dst, const dnn::Option& opt);
         void RecordDownload(const VkTensor& src, Tensor& dst, const dnn::Option& opt);
 
-        void RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& buffer_bindings, const std::vector<VkConstantType>& constants, const VkTensor& dispatcher);
+        void RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& bindings, const std::vector<VkConstantType>& constants, const VkTensor& dispatcher);
         void RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& buffer_bindings, const std::vector<VkConstantType>& constants, const Tensor& dispatcher);
 
         void SubmitAndWait();
@@ -53,9 +53,13 @@ namespace chaos
         {
             enum
             {
-                TYPE_COPY_BUFFER,
+                TYPE_BIND_DESCRIPTOR_SETS,
+                TYPE_BIND_PIPELINE,
                 TYPE_BUFFER_BARRIERS,
+                TYPE_COPY_BUFFER,
+                TYPE_DISPATCH,
                 TYPE_POST_DOWNLOAD,
+                TYPE_PUSH_CONSTANTS,
             };
 
             int type;
@@ -65,11 +69,16 @@ namespace chaos
             {
                 struct
                 {
-                    VkBuffer src;
-                    VkBuffer dst;
-                    uint32_t region_count;
-                    const VkBufferCopy* regions;
-                } copy_buffer;
+                    VkPipelineBindPoint bind_point;
+                    VkPipelineLayout pipeline_layout;
+                    uint32_t descriptor_set_count;
+                    uint32_t descriptor_set_offset;
+                } bind_descriptor_sets;
+                struct
+                {
+                    VkPipelineBindPoint bind_point;
+                    VkPipeline pipeline;
+                } bind_pipeline;
                 struct
                 {
                     VkPipelineStageFlags src_stage;
@@ -79,9 +88,29 @@ namespace chaos
                 } buffer_barriers;
                 struct
                 {
+                    VkBuffer src;
+                    VkBuffer dst;
+                    uint32_t region_count;
+                    const VkBufferCopy* regions;
+                } copy_buffer;
+                struct
+                {
+                    uint32_t group_count_x;
+                    uint32_t group_count_y;
+                    uint32_t group_count_z;
+                } dispatch;
+                struct
+                {
                     uint32_t download_post_buffer_mat_offset;
                     uint32_t download_post_mat_fp16_offset;
                 } post_download;
+                struct
+                {
+                    VkPipelineLayout pipeline_layout;
+                    VkShaderStageFlags stage_flags;
+                    uint32_t size;
+                    const void* values;
+                } push_constants;
             };
         };
 

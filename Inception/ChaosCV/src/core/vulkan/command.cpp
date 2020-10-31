@@ -72,8 +72,6 @@ namespace chaos
 
         // gpu cast to fp16 on the fly (integrated gpu)
         // vkdev->ConvertPacking(dst_staging, dst, dst_elempack, *this, opt);
-        // 从底层代码看，commadn需要pipeline
-        // 所以还需要RecordPipeline
     }
 
     void VkCompute::RecordDownload(const VkTensor& src, Tensor& dst, const dnn::Option& opt)
@@ -150,7 +148,7 @@ namespace chaos
         }
 
         // create dst
-        Tensor _dst;
+        Tensor& _dst = dst;
         _dst.CreateLike(dst_staging, opt.blob_allocator);
         //if (dst_fp16.empty())
         //    return;
@@ -164,12 +162,323 @@ namespace chaos
             Record r;
             r.type = Record::TYPE_POST_DOWNLOAD;
             r.command_buffer = 0;
-            r.post_download.download_post_buffer_mat_offset = download_post_buffers.size() - 1;
-            r.post_download.download_post_mat_fp16_offset = download_post_mats_fp16.size() - 1;
+            r.post_download.download_post_buffer_mat_offset = (uint32_t)download_post_buffers.size() - 1;
+            r.post_download.download_post_mat_fp16_offset = (uint32_t)download_post_mats_fp16.size() - 1;
             delayed_records.push_back(r);
         }
+    }
 
-        dst = _dst;
+    void VkCompute::RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& bindings, const std::vector<VkConstantType>& constants, const VkTensor& dispatcher)
+    {
+
+    }
+
+    void VkCompute::RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& buffer_bindings, const std::vector<VkConstantType>& constants, const Tensor& dispatcher)
+    {
+        const int buffer_binding_count = (int)buffer_bindings.size();
+        //const int image_binding_count = (int)image_bindings.size();
+        const int constant_count = (int)constants.size();
+
+        const int binding_count = buffer_binding_count; // + image_binding_count;
+
+        if (binding_count != pipeline->shader_info.binding_count)
+        {
+            LOG(ERROR) << Format("binding_count not match, expect %d but got %d", pipeline->shader_info.binding_count, buffer_binding_count);
+            //NCNN_LOGE("binding_count not match, expect %d but got %d + %d", pipeline->shader_info.binding_count, buffer_binding_count, image_binding_count);
+        }
+
+        if (constant_count != pipeline->shader_info.push_constant_count)
+        {
+            LOG(ERROR) << Format("push_constant_count not match, expect %d but got %d", pipeline->shader_info.push_constant_count, constant_count);
+        }
+
+        int buffer_index = 0;
+        int image_index = 0;
+        for (int i = 0; i < binding_count; i++)
+        {
+            int binding_type = pipeline->shader_info.binding_types[i];
+
+            if (binding_type == 1)
+            {
+                const VkTensor& binding = buffer_bindings[buffer_index].empty() ? vkdev->GetDummyBuffer() : buffer_bindings[buffer_index];
+                buffer_index++;
+
+                //             NCNN_LOGE("binding #%d buffer = %d %d %d %d @ %lu %d = %p +%ld ~%ld", i, binding.dims, binding.w, binding.h, binding.c, binding.elemsize, binding.elempack, binding.buffer(), binding.buffer_offset(), binding.buffer_capacity());
+
+                if (binding.data->access_flags & VK_ACCESS_SHADER_WRITE_BIT || binding.data->stage_flags != VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
+                {
+                    // barrier device any @ compute/null to shader-readwrite @ compute
+                    VkBufferMemoryBarrier* barriers = new VkBufferMemoryBarrier[1];
+                    barriers[0].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+                    barriers[0].pNext = 0;
+                    barriers[0].srcAccessMask = binding.data->access_flags;
+                    barriers[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                    barriers[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    barriers[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    barriers[0].buffer = binding.buffer();
+                    barriers[0].offset = binding.buffer_offset();
+                    barriers[0].size = binding.buffer_capacity();
+
+                    VkPipelineStageFlags src_stage = binding.data->stage_flags;
+                    VkPipelineStageFlags dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+                    if (vkdev->info.support_VK_KHR_push_descriptor)
+                    {
+                        vkCmdPipelineBarrier(compute_command_buffer, src_stage, dst_stage, 0, 0, 0, 1, barriers, 0, 0);
+                        delete[] barriers;
+                    }
+                    else
+                    {
+                        Record r;
+                        r.type = Record::TYPE_BUFFER_BARRIERS; // buffer_barrers;
+                        r.command_buffer = compute_command_buffer;
+                        r.buffer_barriers.src_stage = src_stage;
+                        r.buffer_barriers.dst_stage = dst_stage;
+                        r.buffer_barriers.barrier_count = 1;
+                        r.buffer_barriers.barriers = barriers;
+                        delayed_records.push_back(r);
+                    }
+
+                    // mark device shader-readwrite @ compute
+                    binding.data->access_flags = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                    binding.data->stage_flags = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                }
+            }
+            else if (binding_type == 2)
+            {
+                LOG(FATAL) << "not now";
+            }
+            else // if (binding_type == 3)
+            {
+                LOG(FATAL) << "not now";
+            }
+        }
+
+        // record bind pipeline
+        {
+            if (vkdev->info.support_VK_KHR_push_descriptor)
+            {
+                vkCmdBindPipeline(compute_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->pipeline);
+            }
+            else
+            {
+                Record r;
+                r.type = Record::TYPE_BIND_PIPELINE; //_bind_pipeline;
+                r.command_buffer = compute_command_buffer;
+                r.bind_pipeline.bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
+                r.bind_pipeline.pipeline = pipeline->pipeline;
+                delayed_records.push_back(r);
+            }
+        }
+
+        // record update bindings
+        if (binding_count > 0)
+        {
+            std::vector<unsigned char> descriptorInfos;
+            {
+                descriptorInfos.resize(sizeof(VkDescriptorBufferInfo) * buffer_binding_count/* + sizeof(VkDescriptorImageInfo) * image_binding_count*/);
+
+                unsigned char* p_descriptorInfos = descriptorInfos.data();
+                int descriptorBufferInfo_index = 0;
+                int descriptorImageInfo_index = 0;
+                for (int i = 0; i < binding_count; i++)
+                {
+                    int binding_type = pipeline->shader_info.binding_types[i];
+
+                    if (binding_type == 1)
+                    {
+                        const VkTensor& binding = buffer_bindings[descriptorBufferInfo_index].empty() ? vkdev->GetDummyBuffer() : buffer_bindings[descriptorBufferInfo_index];
+                        descriptorBufferInfo_index++;
+
+                        VkDescriptorBufferInfo descriptorBufferInfo;
+                        descriptorBufferInfo.buffer = binding.buffer();
+                        descriptorBufferInfo.offset = binding.buffer_offset();
+                        descriptorBufferInfo.range = binding.shape[0] * binding.steps[0] * binding.depth * binding.packing; // binding.total() * binding.elemsize;
+
+                        memcpy(p_descriptorInfos, &descriptorBufferInfo, sizeof(VkDescriptorBufferInfo));
+                        p_descriptorInfos += sizeof(VkDescriptorBufferInfo);
+                    }
+                    else //if (binding_type == 2 || binding_type == 3)
+                    {
+                        LOG(FATAL) << "not now";
+                        //const VkImageMat& binding = image_bindings[descriptorImageInfo_index].empty() ? vkdev->get_dummy_image() : image_bindings[descriptorImageInfo_index];
+                        //descriptorImageInfo_index++;
+
+                        //// we always use immutable nearest sampler set in descroptor layout during pipeline creation
+                        //VkDescriptorImageInfo descriptorImageInfo;
+                        //descriptorImageInfo.sampler = 0;
+                        //descriptorImageInfo.imageView = binding.imageview();
+                        //descriptorImageInfo.imageLayout = binding.data->image_layout;
+
+                        //memcpy(p_descriptorInfos, &descriptorImageInfo, sizeof(VkDescriptorImageInfo));
+                        //p_descriptorInfos += sizeof(VkDescriptorImageInfo);
+                    }
+                }
+            }
+
+            if (vkdev->info.support_VK_KHR_push_descriptor)
+            {
+                vkdev->vkCmdPushDescriptorSetWithTemplateKHR(compute_command_buffer, pipeline->descriptor_update_template, pipeline->pipeline_layout, 0, descriptorInfos.data());
+            }
+            else
+            {
+                // create new descriptor_pool and descriptorset
+                VkDescriptorPool descriptor_pool;
+                {
+                    int image_binding_count = 0;
+                    int sampler_binding_count = 0;
+                    for (int i = 0; i < binding_count; i++)
+                    {
+                        int binding_type = pipeline->shader_info.binding_types[i];
+
+                        if (binding_type == 2)
+                            image_binding_count++;
+                        else // if (binding_type == 3)
+                            sampler_binding_count++;
+                    }
+
+                    VkDescriptorPoolSize poolSizes[3];
+                    poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                    poolSizes[0].descriptorCount = buffer_binding_count;
+                    poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                    poolSizes[1].descriptorCount = image_binding_count;
+                    poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    poolSizes[2].descriptorCount = sampler_binding_count;
+
+                    VkDescriptorPoolCreateInfo descriptorPoolCreateInfo;
+                    descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+                    descriptorPoolCreateInfo.pNext = 0;
+                    descriptorPoolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+                    descriptorPoolCreateInfo.maxSets = 1;
+                    descriptorPoolCreateInfo.poolSizeCount = 3;
+                    descriptorPoolCreateInfo.pPoolSizes = poolSizes;
+
+                    VkResult ret = vkCreateDescriptorPool(vkdev->GetDevice(), &descriptorPoolCreateInfo, 0, &descriptor_pool);
+                    CHECK_EQ(ret, VK_SUCCESS) << Format("vkCreateDescriptorPool failed %d", ret);
+                }
+                descriptor_pools.push_back(descriptor_pool);
+
+                VkDescriptorSet descriptorset;
+                {
+                    VkDescriptorSetAllocateInfo descriptorSetAllocateInfo;
+                    descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                    descriptorSetAllocateInfo.pNext = 0;
+                    descriptorSetAllocateInfo.descriptorPool = descriptor_pool;
+                    descriptorSetAllocateInfo.descriptorSetCount = 1;
+                    descriptorSetAllocateInfo.pSetLayouts = &pipeline->descriptorset_layout;
+
+                    VkResult ret = vkAllocateDescriptorSets(vkdev->GetDevice(), &descriptorSetAllocateInfo, &descriptorset);
+                    CHECK_EQ(ret, VK_SUCCESS) << Format("vkAllocateDescriptorSets failed %d", ret);
+                }
+                descriptor_sets.push_back(descriptorset);
+
+                if (vkdev->info.support_VK_KHR_descriptor_update_template)
+                {
+                    vkdev->vkUpdateDescriptorSetWithTemplateKHR(vkdev->GetDevice(), descriptorset, pipeline->descriptor_update_template, descriptorInfos.data());
+                }
+                else
+                {
+                    std::vector<VkWriteDescriptorSet> writeDescriptorSets(binding_count);
+                    {
+                        const unsigned char* p_descriptorInfos = descriptorInfos.data();
+                        for (int i = 0; i < binding_count; i++)
+                        {
+                            int binding_type = pipeline->shader_info.binding_types[i];
+
+                            writeDescriptorSets[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                            writeDescriptorSets[i].pNext = 0;
+                            writeDescriptorSets[i].dstSet = descriptorset;
+                            writeDescriptorSets[i].dstBinding = i;
+                            writeDescriptorSets[i].dstArrayElement = 0;
+                            writeDescriptorSets[i].descriptorCount = 1;
+                            writeDescriptorSets[i].pTexelBufferView = 0;
+
+                            if (binding_type == 1)
+                            {
+                                writeDescriptorSets[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                                writeDescriptorSets[i].pImageInfo = 0;
+                                writeDescriptorSets[i].pBufferInfo = (const VkDescriptorBufferInfo*)p_descriptorInfos;
+
+                                p_descriptorInfos += sizeof(VkDescriptorBufferInfo);
+                            }
+                            else if (binding_type == 2)
+                            {
+                                writeDescriptorSets[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                                writeDescriptorSets[i].pImageInfo = (const VkDescriptorImageInfo*)p_descriptorInfos;
+                                writeDescriptorSets[i].pBufferInfo = 0;
+
+                                p_descriptorInfos += sizeof(VkDescriptorImageInfo);
+                            }
+                            else // if (binding_type == 3)
+                            {
+                                writeDescriptorSets[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                                writeDescriptorSets[i].pImageInfo = (const VkDescriptorImageInfo*)p_descriptorInfos;
+                                writeDescriptorSets[i].pBufferInfo = 0;
+
+                                p_descriptorInfos += sizeof(VkDescriptorImageInfo);
+                            }
+                        }
+                    }
+
+                    vkUpdateDescriptorSets(vkdev->GetDevice(), binding_count, writeDescriptorSets.data(), 0, 0);
+                }
+
+                Record r;
+                r.type = Record::TYPE_BIND_DESCRIPTOR_SETS; //_bind_descriptorsets;
+                r.command_buffer = compute_command_buffer;
+                r.bind_descriptor_sets.bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
+                r.bind_descriptor_sets.pipeline_layout = pipeline->pipeline_layout;
+                r.bind_descriptor_sets.descriptor_set_count = 1;
+                r.bind_descriptor_sets.descriptor_set_offset = (uint32_t)descriptor_sets.size() - 1;
+                delayed_records.push_back(r);
+            }
+        }
+
+        // record push constants
+        if (constant_count > 0)
+        {
+            if (vkdev->info.support_VK_KHR_push_descriptor)
+            {
+                vkCmdPushConstants(compute_command_buffer, pipeline->pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, constant_count * sizeof(VkConstantType), constants.data());
+            }
+            else
+            {
+                uint32_t size = constant_count * sizeof(VkConstantType);
+                unsigned char* constant_values = new unsigned char[size];
+                memcpy(constant_values, constants.data(), size);
+
+                Record r;
+                r.type = Record::TYPE_PUSH_CONSTANTS; //_push_constants;
+                r.command_buffer = compute_command_buffer;
+                r.push_constants.pipeline_layout = pipeline->pipeline_layout;
+                r.push_constants.stage_flags = VK_SHADER_STAGE_COMPUTE_BIT;
+                r.push_constants.size = size;
+                r.push_constants.values = constant_values;
+                delayed_records.push_back(r);
+            }
+        }
+
+        // record dispatch
+        {
+            uint32_t group_count_x = (dispatcher.shape.GetX() + pipeline->local_size_x - 1) / pipeline->local_size_x;
+            uint32_t group_count_y = (dispatcher.shape.GetY() + pipeline->local_size_y - 1) / pipeline->local_size_y;
+            uint32_t group_count_z = (dispatcher.shape.GetZ() + pipeline->local_size_z - 1) / pipeline->local_size_z;
+
+            if (vkdev->info.support_VK_KHR_push_descriptor)
+            {
+                vkCmdDispatch(compute_command_buffer, group_count_x, group_count_y, group_count_z);
+            }
+            else
+            {
+                Record r;
+                r.type = Record::TYPE_DISPATCH; // _dispatch;
+                r.command_buffer = compute_command_buffer;
+                r.dispatch.group_count_x = group_count_x;
+                r.dispatch.group_count_y = group_count_y;
+                r.dispatch.group_count_z = group_count_z;
+                delayed_records.push_back(r);
+            }
+        }
     }
 
     void VkCompute::SubmitAndWait()
