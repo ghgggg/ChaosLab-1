@@ -29,6 +29,12 @@
 -D buffer_ld1(buf,i)=buf[i] 取buffer，packing 1
 -D buffer_st1(buf,i,v)={buf[i]=v;} 设置buffer， packing 1
 
+# Pipeline
+目前看到的layout类型包括3种
+ - constant_id
+ - binding
+ - push_constant
+
 # 其他
 gl_GlobalInvocationID是当前执行单元在全局工作组中的位置的一种有效的三维索引
 
