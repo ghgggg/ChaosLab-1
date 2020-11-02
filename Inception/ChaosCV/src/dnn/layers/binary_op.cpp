@@ -32,7 +32,7 @@ namespace chaos
             if (a.shape == b.shape)
             {
                 size_t n = a.shape.vol(); // (size_t)a.shape[0] * a.steps[0] / (1 * a.depth);
-                c.Create(a.shape, a.depth, a.packing, opt.blob_allocator);
+                c.Create(a.shape, a.shape.steps(), a.depth, a.packing, opt.blob_allocator);
 
                 for (size_t i = 0; i < n; i++)
                 {
@@ -45,7 +45,7 @@ namespace chaos
                 CHECK_EQ(a.shape.size(), b.shape.size());
                 auto shape = a.shape.vol() > b.shape.vol() ? a.shape : b.shape;
 
-                c.Create(shape, a.depth, a.packing, opt.blob_allocator);
+                c.Create(shape, shape.steps(), a.depth, a.packing, opt.blob_allocator);
 
                 size_t n = shape.vol();
                 size_t num_axes = shape.size();

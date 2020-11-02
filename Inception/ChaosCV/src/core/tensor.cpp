@@ -8,7 +8,7 @@ namespace chaos
 
 	Tensor::Tensor(const Shape& shape, const Depth& depth, const Packing& packing, Allocator* allocator)
 	{
-		Create(shape, depth, packing, allocator);
+		Create(shape, shape.steps(), depth, packing, allocator);
 	}
 	Tensor::Tensor(const Shape& _shape, const Depth& _depth, const Packing& _packing, void* _data, const Steps& _steps)
 		: data(_data), shape(_shape), depth(_depth), packing(_packing) 
@@ -51,9 +51,9 @@ namespace chaos
 		return *this;
 	}
 
-	void Tensor::Create(const Shape& _shape, const Depth& _depth, const Packing& _packing, Allocator* _allocator)
+	void Tensor::Create(const Shape& _shape, const Steps& _steps, const Depth& _depth, const Packing& _packing, Allocator* _allocator)
 	{
-		if (_shape == shape && _depth == depth && _packing == packing && _allocator == allocator) return;
+		if (_shape == shape && _steps == steps && _depth == depth && _packing == packing  && _allocator == allocator) return;
 
 		Release();
 
@@ -61,8 +61,7 @@ namespace chaos
 		depth = _depth;
 		packing = _packing;
 		allocator = _allocator;
-
-		steps = _shape.steps(); //Steps(shape, 1 * depth * packing);
+		steps = _steps; //Steps(shape, 1 * depth * packing);
 
 		size_t total = (size_t)steps[0] * shape[0];
 		if (total > 0)
@@ -81,7 +80,7 @@ namespace chaos
 
 	void Tensor::CreateLike(const VkTensor& t, Allocator* allocator)
 	{
-		Create(t.shape, t.depth, t.packing, allocator);
+		Create(t.shape, t.steps, t.depth, t.packing, allocator);
 	}
 
 	void Tensor::Release()
@@ -181,7 +180,7 @@ namespace chaos
 	{
 		if (flag == TENSOR)
 		{
-			return ((Tensor*)obj)->Create(shape, depth, packing, allocator);
+			return ((Tensor*)obj)->Create(shape, shape.steps(), depth, packing, allocator);
 		}
 		if (flag == NONE)
 		{

@@ -20,7 +20,7 @@ namespace chaos
 		VkTensor(const VkTensor& t);
 		VkTensor& operator=(const VkTensor& t);
 
-		void Create(const Shape& shape, const Depth& depth, const Packing& packing, VkAllocator* allocator);
+		void Create(const Shape& shape, const Steps& steps, const Depth& depth, const Packing& packing, VkAllocator* allocator);
 		// allocate like
 		void CreateLike(const Tensor& t, VkAllocator* allocator);
 		// allocate like

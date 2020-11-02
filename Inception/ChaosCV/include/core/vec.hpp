@@ -216,9 +216,9 @@ namespace chaos
 		Steps(size_t sz) { Allocate(sz); }
 
 		// row steps
-		uint rstep(uint step) const { return sz == 1 ? step : buf[sz - 2]; }
+		uint GetRStep(uint step) const { return sz == 1 ? step : buf[sz - 2]; }
 		// channel steps
-		uint cstep(uint step) const { return sz == 1 || sz == 2 ? step : buf[sz - 3]; };
+		uint GetCStep(uint step) const { return sz == 1 || sz == 2 ? step : buf[sz - 3]; };
 	};
 
 	class Shape : public Vec<uint>

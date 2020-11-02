@@ -19,7 +19,7 @@ namespace chaos
 		Tensor(const Tensor& t);
 		Tensor& operator=(const Tensor& t);
 
-		void Create(const Shape& _shape, const Depth& _depth, const Packing& _packing, Allocator* _allocator);
+		void Create(const Shape& _shape, const Steps& steps, const Depth& _depth, const Packing& _packing, Allocator* _allocator);
 		void CreateLike(const VkTensor& t, Allocator* allocator);
 
 		//void CopyTo(Tensor& t) const;

@@ -55,7 +55,7 @@ namespace chaos
 
 			Shape out_shape = bottom.shape;
 			uint outw = out_shape.back() = weight.shape[0];
-			top.Create(out_shape, Depth::D4, Packing::CHW, opt.blob_allocator);
+			top.Create(out_shape, out_shape.steps(), Depth::D4, Packing::CHW, opt.blob_allocator);
 			if (use_bias)
 			{
 				CHECK_EQ(top.shape, bias.shape);

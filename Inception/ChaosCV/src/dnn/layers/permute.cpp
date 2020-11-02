@@ -61,7 +61,7 @@ namespace chaos
 
             Shape shape = bottom.shape;
             for (size_t i = 0; i < num_axes; i++) shape[i] = bottom.shape[orders[i]];
-            top.Create(shape, bottom.depth, Packing::CHW, opt.blob_allocator);
+            top.Create(shape, shape.steps(), bottom.depth, Packing::CHW, opt.blob_allocator);
 
             if (bottom.depth == Depth::D4)
                 PermuteImpl<float>(shape.vol(), bottom, orders.data(), bottom.shape.data(), bottom.steps.data(), 

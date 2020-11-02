@@ -55,7 +55,7 @@ namespace chaos
 			Tensor _pos = Tensor({ pos.size() }, Depth::D4, Packing::CHW);
 			for (const auto& val : pos) { _pos[idx++] = val; }
 
-			table.Create(Shape(4, (int)threshold.size()), Depth::D4, Packing::CHW, nullptr);
+			table.Create(Shape(4, (int)threshold.size()), { (int)threshold.size(),1 }, Depth::D4, Packing::CHW, nullptr);
 			size_t rsteps = table.steps[0];
 			int* tp = (int*)table; // .row(0);
 			int* fp = (int*)table + rsteps; // .row(1);
