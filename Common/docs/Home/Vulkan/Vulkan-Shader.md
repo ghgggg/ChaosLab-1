@@ -26,6 +26,8 @@
 -Dafp=float -Dafpvec2=vec2 -Dafpvec4=vec4 -Dafpvec8=mat2x4 -Dafpmat4=mat4  
 直觉上afp和sfp是用来区分binding data和临时变量的   
 -D psc(x)=(x==0?p.x:x) 三目运算符
+-D buffer_ld1(buf,i)=buf[i] 取buffer，packing 1
+-D buffer_st1(buf,i,v)={buf[i]=v;} 设置buffer， packing 1
 
 # 其他
 gl_GlobalInvocationID是当前执行单元在全局工作组中的位置的一种有效的三维索引
