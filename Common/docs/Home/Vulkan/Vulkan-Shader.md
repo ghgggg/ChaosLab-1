@@ -22,7 +22,10 @@
 |Decorate|71|-|
 
 # 约定
-
+-Dsfp=float -Dsfpvec2=vec2 -Dsfpvec4=vec4 -Dsfpvec8=mat2x4 -Dsfpmat4=mat4  
+-Dafp=float -Dafpvec2=vec2 -Dafpvec4=vec4 -Dafpvec8=mat2x4 -Dafpmat4=mat4  
+直觉上afp和sfp是用来区分binding data和临时变量的   
+-D psc(x)=(x==0?p.x:x) 三目运算符
 
 # 其他
 gl_GlobalInvocationID是当前执行单元在全局工作组中的位置的一种有效的三维索引
