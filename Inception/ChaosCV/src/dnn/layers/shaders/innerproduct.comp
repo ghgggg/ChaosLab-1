@@ -1,0 +1,72 @@
+
+#version 450
+
+#if CHAOS_FP16_STORAGE
+#extension GL_EXT_shader_16bit_storage: require
+#endif
+#if CHAOS_FP16_ARITHMETIC
+#extension GL_EXT_shader_explicit_arithmetic_types_float16: require
+#endif
+
+layout (constant_id = 0) const int use_bias = 0;
+layout (constant_id = 1) const int activation_type = 0;
+layout (constant_id = 2) const float activation_param0 = 0;
+layout (constant_id = 3) const float activation_param1 = 0;
+
+#define shape_constant_id_offset 4
+layout (constant_id = shape_constant_id_offset + 0) const int in_dims = 0;
+layout (constant_id = shape_constant_id_offset + 1) const int in_w = 0;
+layout (constant_id = shape_constant_id_offset + 2) const int in_h = 0;
+layout (constant_id = shape_constant_id_offset + 3) const int in_c = 0;
+layout (constant_id = shape_constant_id_offset + 4) const int in_rstep = 0;
+layout (constant_id = shape_constant_id_offset + 5) const int in_cstep = 0;
+
+layout (constant_id = shape_constant_id_offset + 6) const int out_dims = 0;
+layout (constant_id = shape_constant_id_offset + 7) const int out_w = 0;
+layout (constant_id = shape_constant_id_offset + 8) const int out_h = 0;
+layout (constant_id = shape_constant_id_offset + 9) const int out_c = 0;
+layout (constant_id = shape_constant_id_offset + 10) const int out_rstep = 0;
+layout (constant_id = shape_constant_id_offset + 11) const int out_cstep = 0;
+
+
+
+layout (binding = 0) readonly buffer bottom { sfp bottom_data[]; };
+layout (binding = 1) writeonly buffer top { sfp top_data[]; }; 
+layout (binding = 2) readonly buffer weight { sfp weight_data[]; };
+layout (binding = 3) readonly buffer bias { sfp bias_data[]; };
+
+layout (push_constant) uniform parameter
+{
+    int in_dims;
+    int in_w;
+    int in_h;
+    int in_c;
+    int in_rstep;
+    int in_cstep;
+
+    int out_dims;
+    int out_w;
+    int out_h;
+    int out_c;
+    int out_rstep;
+    int out_cstep;
+} p;
+
+void main()
+{
+	int gx = int(gl_GlobalInvocationID.x);
+    int gy = int(gl_GlobalInvocationID.y);
+    int gz = int(gl_GlobalInvocationID.z);
+
+    if (gx >= p.outw || gy >= p.outh || gz >= 1)
+        return;
+    
+    afp sum;
+    if (bias_term == 1)
+    {
+    }
+    else
+    {
+        sum = afp(0.f);
+    }
+}

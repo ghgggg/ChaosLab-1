@@ -7,6 +7,8 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <vector>
+
 namespace chaos
 {
     namespace dnn { class Option; }
@@ -54,6 +56,7 @@ namespace chaos
         // digest -> artifact
         struct pipeline_cache_digest
         {
+        public:
             pipeline_cache_digest(const uint32_t* spv_data, size_t spv_data_size, const std::vector<VkSpecializationType>& specializations,
                 uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z);
             pipeline_cache_digest(int shader_type_index, const dnn::Option& opt, const std::vector<VkSpecializationType>& specializations,
@@ -98,6 +101,7 @@ namespace chaos
 
         struct pipeline_cache_artifact
         {
+        public:
             VkShaderModule shader_module;
             VkDescriptorSetLayout descriptorset_layout;
             VkPipelineLayout pipeline_layout;

@@ -13,8 +13,15 @@ namespace chaos
 	Tensor::Tensor(const Shape& _shape, const Depth& _depth, const Packing& _packing, void* _data, const Steps& _steps)
 		: data(_data), shape(_shape), depth(_depth), packing(_packing) 
 	{
-		steps = _steps.empty() ? shape.steps() : _steps;
-		CHECK_EQ(steps.size(), shape.size());
+		if (_steps.empty())
+		{
+			steps = shape.steps();
+		}
+		else
+		{
+			steps = _steps;
+			CHECK_EQ(steps.size(), shape.size());
+		}
 	}
 
 	Tensor::~Tensor() { Release(); }

@@ -1084,6 +1084,8 @@ namespace chaos
 		*dstsize = (unsigned char*)dp - (unsigned char*)dstcode;
 	}
 
+	
+
 	VkShaderModule VulkanDevice::CompileShaderModule(const uint32_t* spv_data, size_t spv_data_size, uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z) const
 	{
 		uint32_t* spv_data_modified = (uint32_t*)malloc(spv_data_size);

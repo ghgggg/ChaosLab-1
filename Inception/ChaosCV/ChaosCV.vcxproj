@@ -186,6 +186,7 @@
     <ClInclude Include="include\dnn\layer.hpp" />
     <ClInclude Include="include\dnn\layers\binary_op.hpp" />
     <ClInclude Include="include\dnn\layers\innerproduct.hpp" />
+    <ClInclude Include="include\dnn\layers\innerproduct_vulkan.hpp" />
     <ClInclude Include="include\dnn\layers\noop.hpp" />
     <ClInclude Include="include\dnn\layers\permute.hpp" />
     <ClInclude Include="include\dnn\layer_factory.hpp" />
@@ -211,6 +212,7 @@
     <ClCompile Include="src\dnn\layer.cpp" />
     <ClCompile Include="src\dnn\layers\binary_op.cpp" />
     <ClCompile Include="src\dnn\layers\innerproduct.cpp" />
+    <ClCompile Include="src\dnn\layers\innerproduct_vulkan.cpp" />
     <ClCompile Include="src\dnn\layers\noop.cpp" />
     <ClCompile Include="src\dnn\layers\permute.cpp" />
     <ClCompile Include="src\dnn\layer_declaration.cpp" />
@@ -220,6 +222,11 @@
     <ClCompile Include="src\math\lapack.cpp" />
     <ClCompile Include="src\math\tensor_op.cpp" />
     <ClCompile Include="src\metrics\confusion.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\dnn\layers\shaders\innerproduct.comp">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

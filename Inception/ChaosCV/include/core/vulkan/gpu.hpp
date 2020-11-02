@@ -132,7 +132,6 @@ namespace chaos
 
         VkShaderModule CreateShaderModule(int shader_type_index, uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z) const;
         VkShaderModule CompileShaderModule(const uint32_t* spv_data, size_t spv_data_size) const;
-
         // with fixed workgroup size
         VkShaderModule CompileShaderModule(const uint32_t* spv_data, size_t spv_data_size, uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z) const;
 

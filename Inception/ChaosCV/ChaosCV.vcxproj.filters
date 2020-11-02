@@ -49,6 +49,9 @@
     <Filter Include="Source Files\core\vulkan">
       <UniqueIdentifier>{f01c1408-ec0d-4933-8f70-53605f7ca9d9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\dnn\layers\shaders">
+      <UniqueIdentifier>{e26b2a48-18e0-4c06-9a9c-35e9d20b5545}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\core.hpp">
@@ -126,6 +129,9 @@
     <ClInclude Include="include\dnn\shader_factory.hpp">
       <Filter>Header Files\dnn</Filter>
     </ClInclude>
+    <ClInclude Include="include\dnn\layers\innerproduct_vulkan.hpp">
+      <Filter>Header Files\dnn\layers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\core.cpp">
@@ -194,5 +200,13 @@
     <ClCompile Include="src\core\vulkan\pipeline.cpp">
       <Filter>Source Files\core\vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="src\dnn\layers\innerproduct_vulkan.cpp">
+      <Filter>Source Files\dnn\layers</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\dnn\layers\shaders\innerproduct.comp">
+      <Filter>Source Files\dnn\layers\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

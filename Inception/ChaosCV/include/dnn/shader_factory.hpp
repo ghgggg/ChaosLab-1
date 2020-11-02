@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/core.hpp"
+#include <map>
 
 namespace chaos
 {
@@ -8,7 +9,7 @@ namespace chaos
 	{
 		struct LayerShaderRegistryEntry
 		{
-			//const char* name;
+			const char* name;
 			const uint32_t* spv_data;
 			size_t spv_data_size;
 		};
@@ -19,17 +20,17 @@ namespace chaos
 			using ShaderRegistry = std::vector<LayerShaderRegistryEntry>;
 
 			static ShaderRegistry& Registry();
-			static void AddShader(const uint32_t* spv_data, size_t size);
+			static void AddShader(const char* name, const uint32_t* spv_data, size_t size);
 
+			static int GetIndex(const char* name);
 		private:
 			LayerShaderRegistry() = default;
 		};
 
-		//class CHAOS_API ShaderRegisterer
-		//{
-		//public:
-		//	ShaderRegisterer(const char* name, const uint32_t* data, size_t size);
-		//};
-
+		class CHAOS_API ShaderRegisterer
+		{
+		public:
+			ShaderRegisterer(const char* name, const uint32_t* data, size_t size);
+		};
 	}
 }
