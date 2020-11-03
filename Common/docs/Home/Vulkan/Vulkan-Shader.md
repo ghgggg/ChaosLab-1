@@ -29,6 +29,15 @@
 -D buffer_ld1(buf,i)=buf[i] 取buffer，packing 1
 -D buffer_st1(buf,i,v)={buf[i]=v;} 设置buffer， packing 1
 
+# Pipeline
+目前看到的layout类型包括3种
+ - constant_id
+ - binding
+ - push_constant
+
+# 编译
+glslangValidator -Dsfp=float -Dafp=float "-D buffer_ld1(buf,i)=buf[i]" "-D buffer_st1(buf,i,v)={buf[i]=v;}" "-D psc(x)=(x==0?p.x:x)" -V  --vn innerproduct -x -o innerproduct.spv.hex.hpp innerproduct.comp
+
 # 其他
 gl_GlobalInvocationID是当前执行单元在全局工作组中的位置的一种有效的三维索引
 
