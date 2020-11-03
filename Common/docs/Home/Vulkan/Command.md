@@ -3,4 +3,4 @@
 
 
 # Vulkan Transfer Command
-仅提供上传命令
+仅提供Upload命令
