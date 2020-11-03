@@ -31,7 +31,7 @@ namespace chaos
 	static VulkanDevice* g_devices[MAX_GPU_COUNT] = { 0 };
 
 	static const auto& layer_shader_registry = dnn::LayerShaderRegistry::Registry();
-	static std::vector<ShaderInfo> layer_shader_infos(layer_shader_registry.size());
+	static std::vector<ShaderInfo> layer_shader_infos;
 
 	int support_VK_KHR_external_memory_capabilities = 0;
 	int support_VK_KHR_get_physical_device_properties2 = 0;
@@ -657,6 +657,7 @@ namespace chaos
 		g_default_gpu_index = FindDefaultVulkanDeviceIndex();
 
 		// resolve shader info
+		layer_shader_infos.resize(layer_shader_registry.size());
 		for (size_t i = 0; i < layer_shader_registry.size(); i++)
 		{
 			ResolveShaderInfo(layer_shader_registry[i].spv_data, layer_shader_registry[i].spv_data_size, layer_shader_infos[i]);
@@ -961,7 +962,7 @@ namespace chaos
 
 	VkShaderModule VulkanDevice::CreateShaderModule(int shader_type_index, uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z) const
 	{
-		CHECK(shader_type_index < 0 || shader_type_index >= layer_shader_registry.size()) << "no such shader module " << shader_type_index;
+		CHECK(shader_type_index >= 0 && shader_type_index < layer_shader_registry.size()) << "no such shader module " << shader_type_index;
 
 		const uint32_t* spv_data = layer_shader_registry[shader_type_index].spv_data;
 		size_t spv_data_size = layer_shader_registry[shader_type_index].spv_data_size;

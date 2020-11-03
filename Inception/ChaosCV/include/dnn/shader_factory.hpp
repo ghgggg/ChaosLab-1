@@ -1,6 +1,8 @@
 #pragma once
 
 #include "core/core.hpp"
+#include "core/vulkan/gpu.hpp"
+
 #include <map>
 
 namespace chaos
@@ -34,3 +36,6 @@ namespace chaos
 		};
 	}
 }
+
+#define REGISTER_SHADER(name) \
+static ShaderRegisterer shader_##name(#name, ##name##_spv_data, sizeof(##name##_spv_data));

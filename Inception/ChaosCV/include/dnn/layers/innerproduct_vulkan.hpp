@@ -8,7 +8,7 @@ namespace chaos
 {
 	namespace dnn
 	{
-		class InnerProductVulkan : virtual public InnerProduct
+		class CHAOS_API InnerProductVulkan : virtual public InnerProduct
 		{
 		public:
 			InnerProductVulkan();

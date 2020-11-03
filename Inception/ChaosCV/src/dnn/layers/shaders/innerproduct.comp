@@ -30,10 +30,10 @@ layout (binding = 0) readonly buffer bottom { sfp bottom_data[]; };
 layout (binding = 1) writeonly buffer top { sfp top_data[]; }; 
 layout (binding = 2) readonly buffer weight { sfp weight_data[]; };
 layout (binding = 3) readonly buffer bias { sfp bias_data[]; };
-layout (binding = 4) readonly buffer bottom_shape { int bottom_shape_data[]; };
-layout (binding = 5) readonly buffer bottom_steps { int bottom_steps_data[]; };
-layout (binding = 6) readonly buffer top_shape { int top_shape_data[]; };
-layout (binding = 7) readonly buffer top_steps { int top_steps_data[]; }
+//layout (binding = 4) readonly buffer bottom_shape { int bottom_shape_data[]; };
+//layout (binding = 5) readonly buffer bottom_steps { int bottom_steps_data[]; };
+//layout (binding = 6) readonly buffer top_shape { int top_shape_data[]; };
+//layout (binding = 7) readonly buffer top_steps { int top_steps_data[]; };
 
 layout (push_constant) uniform parameter
 {
@@ -54,25 +54,35 @@ void main()
     int gy = int(gl_GlobalInvocationID.y);
     int gz = int(gl_GlobalInvocationID.z);
 
-    if (gx >= p.outw || gy >= p.outh || gz >= 1)
+    if (gx >= psc(out_w) || gy >= psc(out_h) || gz >= 1)
         return;
-    
-    int idx = gx * p.in_w + gy * p.in_h + gz * p.in_w;
-    int offset = 0;
-    for (int j = p.in_dims - 1; j >= 0; j--)
-    {
-        offset += idx % buffer_ld1(bottom_shape, j) * buffer_ld1(bottom_steps, j);
-        idx /= buffer_ld1(bottom_shape, j);
-    }
-
-    afp sum;
-    if (bias_term == 1)
-    {
-    }
-    else
-    {
-        sum = afp(0.f);
-    }
 
 
+    afp sum = afp(0.f);
+
+    //int in_idx = gy * psc(in_w) + gz * psc(in_w) * psc(in_h);
+    //int in_offset = 0;
+    //for (int j = psc(in_dims) - 1; j >= 0; j--)
+    //{
+    //    in_offset += in_idx % bottom_shape_data[j] * bottom_steps_data[j];
+    //    in_idx /= bottom_shape_data[j];
+    //}
+
+    int in_offset = gy * psc(in_w);
+    int w_offset = gx * psc(in_w);
+    for (int i = 0; i < psc(out_w); i++)
+    {
+        sum += buffer_ld1(weight_data, w_offset + i) * buffer_ld1(bottom_data, in_offset + i);
+    }
+
+
+    //int out_idx = gx + gy * psc(out_w) + gz * psc(out_w) * psc(out_h);
+    //int out_offset = 0;
+    //for (int j = psc(out_dims) - 1; j>=0; j--)
+    //{
+    //    out_offset += out_idx % top_shape_data[j] * top_steps_data[j];
+    //    out_idx /= top_shape_data[j];
+    //}
+    const int out_offset = gx + gy * psc(out_w);
+    buffer_st1(top_data, out_offset, sum);
 }

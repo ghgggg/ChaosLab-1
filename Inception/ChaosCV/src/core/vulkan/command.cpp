@@ -98,6 +98,15 @@ namespace chaos
         }
 
         const VkTensor& dst_staging = src;
+        if (opt_staging.blob_vkallocator->mappable)
+        {
+            std::cout << "mappable" << std::endl;
+        }
+        else
+        {
+            opt_staging.blob_vkallocator = opt.staging_vkallocator;
+
+        }
         //if (opt_staging.blob_vkallocator->mappable)
         //{
         //    vkdev->convert_packing(src, dst_staging, dst_elempack, *this, opt_staging);
@@ -155,7 +164,8 @@ namespace chaos
 
         // download
         download_post_buffers.push_back(dst_staging);
-        download_post_mats_fp16.push_back(_dst);
+        download_post_mats.push_back(_dst);
+        //download_post_mats_fp16.push_back(_dst);
 
         // post memcpy device to dst
         {
@@ -163,7 +173,7 @@ namespace chaos
             r.type = Record::TYPE_POST_DOWNLOAD;
             r.command_buffer = 0;
             r.post_download.download_post_buffer_mat_offset = (uint32_t)download_post_buffers.size() - 1;
-            r.post_download.download_post_mat_fp16_offset = (uint32_t)download_post_mats_fp16.size() - 1;
+            //r.post_download.download_post_mat_fp16_offset = (uint32_t)download_post_mats_fp16.size() - 1;
             delayed_records.push_back(r);
         }
     }
@@ -195,10 +205,10 @@ namespace chaos
 
             if (binding_type == 1)
             {
-                const VkTensor& binding = buffer_bindings[buffer_index].empty() ? vkdev->GetDummyBuffer() : buffer_bindings[buffer_index];
+                const VkTensor& binding = buffer_bindings[buffer_index]; // .empty() ? vkdev->GetDummyBuffer() : buffer_bindings[buffer_index];
                 buffer_index++;
 
-                //             NCNN_LOGE("binding #%d buffer = %d %d %d %d @ %lu %d = %p +%ld ~%ld", i, binding.dims, binding.w, binding.h, binding.c, binding.elemsize, binding.elempack, binding.buffer(), binding.buffer_offset(), binding.buffer_capacity());
+                // NCNN_LOGE("binding #%d buffer = %d %d %d %d @ %lu %d = %p +%ld ~%ld", i, binding.dims, binding.w, binding.h, binding.c, binding.elemsize, binding.elempack, binding.buffer(), binding.buffer_offset(), binding.buffer_capacity());
 
                 if (binding.data->access_flags & VK_ACCESS_SHADER_WRITE_BIT || binding.data->stage_flags != VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
                 {
@@ -491,16 +501,36 @@ namespace chaos
 
                 switch (r.type)
                 {
-                case Record::TYPE_COPY_BUFFER:
+                case Record::TYPE_BIND_DESCRIPTOR_SETS: //bind_descriptorsets:
                 {
-                    vkCmdCopyBuffer(r.command_buffer, r.copy_buffer.src, r.copy_buffer.dst, r.copy_buffer.region_count, r.copy_buffer.regions);
-                    delete[] r.copy_buffer.regions;
+                    vkCmdBindDescriptorSets(r.command_buffer, r.bind_descriptor_sets.bind_point, r.bind_descriptor_sets.pipeline_layout, 0, r.bind_descriptor_sets.descriptor_set_count, &descriptor_sets[r.bind_descriptor_sets.descriptor_set_offset], 0, 0);
+                    break;
+                }
+                case Record::TYPE_BIND_PIPELINE: //bind_pipeline:
+                {
+                    vkCmdBindPipeline(r.command_buffer, r.bind_pipeline.bind_point, r.bind_pipeline.pipeline);
                     break;
                 }
                 case Record::TYPE_BUFFER_BARRIERS: // buffer_barrers:
                 {
                     vkCmdPipelineBarrier(r.command_buffer, r.buffer_barriers.src_stage, r.buffer_barriers.dst_stage, 0, 0, 0, r.buffer_barriers.barrier_count, r.buffer_barriers.barriers, 0, 0);
                     delete[] r.buffer_barriers.barriers;
+                    break;
+                }
+                case Record::TYPE_COPY_BUFFER:
+                {
+                    vkCmdCopyBuffer(r.command_buffer, r.copy_buffer.src, r.copy_buffer.dst, r.copy_buffer.region_count, r.copy_buffer.regions);
+                    delete[] r.copy_buffer.regions;
+                    break;
+                }
+                case Record::TYPE_DISPATCH: //dispatch:
+                {
+                    vkCmdDispatch(r.command_buffer, r.dispatch.group_count_x, r.dispatch.group_count_y, r.dispatch.group_count_z);
+                    break;
+                }
+                case Record::TYPE_PUSH_CONSTANTS: //push_constants:
+                {
+                    vkCmdPushConstants(r.command_buffer, r.push_constants.pipeline_layout, r.push_constants.stage_flags, 0, r.push_constants.size, r.push_constants.values);
                     break;
                 }
                 case Record::TYPE_POST_DOWNLOAD: //post_download:
@@ -560,8 +590,8 @@ namespace chaos
             case Record::TYPE_POST_DOWNLOAD: //post_download:
             {
                 const VkTensor& src = download_post_buffers[r.post_download.download_post_buffer_mat_offset];
-                Tensor& dst = download_post_mats_fp16[r.post_download.download_post_mat_fp16_offset];
-
+                Tensor& dst = download_post_mats[r.post_download.download_post_buffer_mat_offset];
+                //Tensor& dst = download_post_mats[r.post_download.download_post_buffer_mat_offset];
                 // NCNN_LOGE("post_download  %p +%d ~%d  -> %p", src.buffer(), src.buffer_offset(), src.buffer_capacity(), dst.data);
 
                 src.allocator->Invalidate(src.data);
@@ -580,7 +610,7 @@ namespace chaos
     {
         upload_staging_buffers.clear();
         download_post_buffers.clear();
-        download_post_mats_fp16.clear();
+        //download_post_mats_fp16.clear();
         download_post_mats.clear();
 
         if (!vkdev->info.support_VK_KHR_push_descriptor)

@@ -239,7 +239,7 @@ namespace chaos
                     it->second -= aligned_size;
                 }
 
-                //             NCNN_LOGE("VkBlobAllocator M %p +%lu %lu", ptr->buffer, ptr->offset, ptr->capacity);
+                // NCNN_LOGE("VkBlobAllocator M %p +%lu %lu", ptr->buffer, ptr->offset, ptr->capacity);
 
                 return ptr;
             }

@@ -7,7 +7,7 @@ namespace chaos
 	namespace dnn
 	{
 		// y=w*x^t+b
-		class InnerProduct : public Layer
+		class CHAOS_API InnerProduct : public Layer
 		{
 		public:
 			InnerProduct();

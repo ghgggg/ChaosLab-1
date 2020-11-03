@@ -13,7 +13,7 @@ namespace chaos
 {
     namespace dnn { class Option; }
 
-    class PipelineCache
+    class CHAOS_API PipelineCache
     {
     public:
         PipelineCache(const VulkanDevice* _vkdev);

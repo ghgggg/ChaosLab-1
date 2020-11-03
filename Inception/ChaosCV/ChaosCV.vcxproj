@@ -224,9 +224,9 @@
     <ClCompile Include="src\metrics\confusion.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\dnn\layers\shaders\innerproduct.comp">
+    <CustomBuild Include="src\dnn\layers\shaders\innerproduct.comp">
       <FileType>Document</FileType>
-    </None>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

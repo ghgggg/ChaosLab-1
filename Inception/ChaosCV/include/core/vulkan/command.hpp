@@ -22,6 +22,8 @@ namespace chaos
         void RecordUpload(const Tensor& src, VkTensor& dst, const dnn::Option& opt);
         void RecordDownload(const VkTensor& src, Tensor& dst, const dnn::Option& opt);
 
+        void RecordClone(const VkTensor& src, VkTensor& dst, const dnn::Option& opt);
+
         void RecordPipeline(const Pipeline* pipeline, const std::vector<VkTensor>& buffer_bindings, const std::vector<VkConstantType>& constants, const Shape& dispatcher);
 
         void SubmitAndWait();
@@ -43,7 +45,7 @@ namespace chaos
 
         std::vector<VkTensor> upload_staging_buffers;
         std::vector<VkTensor> download_post_buffers;
-        std::vector<Tensor> download_post_mats_fp16;
+        //std::vector<Tensor> download_post_mats_fp16;
         std::vector<Tensor> download_post_mats;
 
         // the good-old path for device without VK_KHR_push_descriptor
@@ -103,7 +105,7 @@ namespace chaos
                 struct
                 {
                     uint32_t download_post_buffer_mat_offset;
-                    uint32_t download_post_mat_fp16_offset;
+                    //uint32_t download_post_mat_fp16_offset;
                 } post_download;
                 struct
                 {
