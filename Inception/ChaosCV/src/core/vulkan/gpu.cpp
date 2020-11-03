@@ -1,6 +1,7 @@
 #include "core/vulkan/gpu.hpp"
 #include "core/vulkan/vk_allocator.hpp"
 #include "core/vulkan/vk_tensor.hpp"
+#include "core/vulkan/pipeline.hpp"
 
 #include "dnn/shader_factory.hpp"
 
@@ -928,7 +929,7 @@ namespace chaos
 		}
 
 		//CreateDummyBufferImage();
-		//pipeline_cache = new PipelineCache(this);
+		pipeline_cache = new PipelineCache(this);
 		//memset(uop_packing, 0, sizeof(uop_packing));
 	}
 

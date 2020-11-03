@@ -344,7 +344,7 @@ namespace chaos
             }
             LOG(FATAL) << Format("pipeline specialization count mismatch, expect %d but got %d", shader_info.specialization_count, (int)specializations.size());
         }
-        // 需要释放额外的内容，则
+
         vkdev->CreateDescriptorsetLayout(shader_info.binding_count, shader_info.binding_types, &descriptorset_layout);
 
         vkdev->CreatePipelineLayout(shader_info.push_constant_count, descriptorset_layout, &pipeline_layout);

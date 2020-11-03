@@ -100,7 +100,7 @@ namespace chaos
         const VkTensor& dst_staging = src;
         if (opt_staging.blob_vkallocator->mappable)
         {
-            std::cout << "mappable" << std::endl;
+            //std::cout << "mappable" << std::endl;
         }
         else
         {
