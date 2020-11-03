@@ -1,5 +1,6 @@
 # Vulkan Compute Command
+提供Upload、Download、Clone以及Upload Pipeline的相关命令
 
-PS：没明白为什么Upload需要转FP16？
 
 # Vulkan Transfer Command
+仅提供上传命令
