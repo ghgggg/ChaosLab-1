@@ -170,7 +170,7 @@ namespace chaos
 	static inline void* FastMalloc(size_t size)
 	{
 		return _aligned_malloc(size, MALLOC_ALIGN);
-	}
+ 	}
 
 	static inline void FastFree(void* ptr)
 	{

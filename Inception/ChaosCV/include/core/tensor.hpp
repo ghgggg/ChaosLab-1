@@ -74,6 +74,8 @@ namespace chaos
 		Tensor GetTensor() const;
 
 		bool IsTensor() const;
+
+		bool empty() const;
 	protected:
 		int flag;
 		void* obj;
@@ -88,7 +90,7 @@ namespace chaos
 		OutputArray(Tensor& data);
 
 		bool Needed() const;
-		void Create(const Shape& shape, const Depth& depth, const Packing& packing, Allocator* allocator = nullptr) const;
+		void Create(const Shape& shape, const Steps& steps, const Depth& depth, const Packing& packing, Allocator* allocator = nullptr) const;
 		void Release() const;
 		Tensor& GetTensorRef() const;
 	};

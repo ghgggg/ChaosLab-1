@@ -312,7 +312,7 @@ namespace chaos
         Tensor v;
         if (_evects.Needed())
         {
-            _evects.Create({ n, n }, src.depth, src.packing, src.allocator);
+            _evects.Create({ n, n }, {n, 1}, src.depth, src.packing, src.allocator);
             v = _evects.GetTensor();
         }
 
@@ -764,8 +764,8 @@ namespace chaos
             (w.shape == Shape(nm, 1) || w.shape == Shape(1, nm) || w.shape == Shape(vt.shape[0], u.shape[1])));
         CHECK(rhs.data == 0 || (rhs.depth == depth && rhs.shape[0] == m));
 
-        _dst.Create({ n, nb }, depth, packing, allocator);
-        Tensor dst = _dst.GetTensor();
+        _dst.Create({ n, nb }, {nb, (uint)1}, depth, packing, allocator);
+        Tensor& dst = _dst.GetTensorRef();
 
         SVBkSb(m, n, w, wstep, u, u.steps[0], false,
             vt, vt.steps[0], true, rhs, rhs.empty() ? 0 : rhs.steps[0], nb,
@@ -793,6 +793,10 @@ namespace chaos
             Tensor vt({ nm, n }, depth, packing, (uchar*)w + nm * esz);
 
             SVD::Compute(src, w, u, vt);
+
+            for (int i = 0; i < w.shape.vol(); i++) std::cout << w[i] << " ";
+            std::cout << std::endl;
+
             SVD::BackSubst(w, u, vt, Tensor(), _dst);
 
             return (w[0] >= FLT_EPSILON ?
@@ -819,7 +823,7 @@ namespace chaos
 
         CHECK(method == DECOMP_LU || method == DECOMP_CHOLESKY);
 
-        _dst.Create({ n, n }, depth, packing, allocator);
+        _dst.Create({ n, n }, {n, 1}, depth, packing, allocator);
         Tensor dst = _dst.GetTensor();
 
         if (n <= 3)

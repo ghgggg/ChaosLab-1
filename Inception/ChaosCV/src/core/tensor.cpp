@@ -99,8 +99,9 @@ namespace chaos
 
 	void Tensor::CopyTo(const OutputArray& arr, Allocator* allocator) const
 	{
-		arr.Create(shape, depth, packing, allocator);
-		Tensor t = arr.GetTensor();
+		if (arr.empty()) arr.Create(shape, steps, depth, packing, allocator);
+		Tensor& t = arr.GetTensorRef();
+		CHECK_EQ(t.shape, shape);
 
 		size_t elem_size = 1 * depth * packing;
 		if (continua() && t.continua())
@@ -168,6 +169,10 @@ namespace chaos
 	//	LOG(FATAL) << "unknown/unsupported array type";
 	//}
 	bool InputArray::IsTensor() const { return flag == TENSOR; }
+	bool InputArray::empty() const
+	{
+		if (flag == TENSOR) return ((const Tensor*)obj)->empty();
+	}
 	void InputArray::Init(int _flag, const void* _obj)
 	{
 		flag = _flag; obj = (void*)_obj;
@@ -176,11 +181,11 @@ namespace chaos
 
 	OutputArray::OutputArray() { Init(NONE, nullptr); }
 	OutputArray::OutputArray(Tensor& data) { Init(TENSOR, &data); }
-	void OutputArray::Create(const Shape& shape, const Depth& depth, const Packing& packing, Allocator* allocator) const
+	void OutputArray::Create(const Shape& shape, const Steps& steps, const Depth& depth, const Packing& packing, Allocator* allocator) const
 	{
 		if (flag == TENSOR)
 		{
-			return ((Tensor*)obj)->Create(shape, shape.steps(), depth, packing, allocator);
+			return ((Tensor*)obj)->Create(shape, steps.empty() ? shape.steps() : steps, depth, packing, allocator);
 		}
 		if (flag == NONE)
 		{

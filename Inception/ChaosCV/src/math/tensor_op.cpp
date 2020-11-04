@@ -15,7 +15,7 @@ namespace chaos
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();
-        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Depth::D4, Packing::CHW, opt.blob_allocator);
+        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Steps(), Depth::D4, Packing::CHW, opt.blob_allocator);
         Tensor c = _c.GetTensor();
 
         std::vector<Tensor> tops = { c };
@@ -29,7 +29,7 @@ namespace chaos
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();
-        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Depth::D4, Packing::CHW, opt.blob_allocator);
+        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Steps(), Depth::D4, Packing::CHW, opt.blob_allocator);
         Tensor c = _c.GetTensor();
 
         std::vector<Tensor> tops = { c };
@@ -43,7 +43,7 @@ namespace chaos
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();
-        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Depth::D4, Packing::CHW, opt.blob_allocator);
+        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Steps(), Depth::D4, Packing::CHW, opt.blob_allocator);
         Tensor c = _c.GetTensor();
 
         std::vector<Tensor> tops = { c };
@@ -57,7 +57,7 @@ namespace chaos
 
         Tensor a = _a.GetTensor();
         Tensor b = _b.GetTensor();
-        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Depth::D4, Packing::CHW, opt.blob_allocator);
+        _c.Create(a.shape.vol() > b.shape.vol() ? a.shape : b.shape, Steps(), Depth::D4, Packing::CHW, opt.blob_allocator);
         Tensor c = _c.GetTensor();
 
         std::vector<Tensor> tops = {c};
@@ -260,8 +260,11 @@ namespace chaos
     {
         Tensor src = _src.GetTensor();
 
-        _dst.Create({ src.shape[1], src.shape[0] }, src.depth, src.packing, src.allocator);
-        Tensor dst = _dst.GetTensor();
+        if (_dst.empty()) _dst.Create({ src.shape[1], src.shape[0] }, Steps(), src.depth, src.packing, src.allocator);
+        Tensor& dst = _dst.GetTensorRef();
+        CHECK(src.shape[0], dst.shape[1]);
+        CHECK(src.shape[1], dst.shape[0]);
+
         size_t esz = 1 * src.depth * src.packing;
         if (dst.data == src.data)
         {
