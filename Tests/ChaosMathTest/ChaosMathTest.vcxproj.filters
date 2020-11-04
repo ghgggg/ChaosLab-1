@@ -23,5 +23,11 @@
     <ClCompile Include="test_invert.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="test_copy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_transpose.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

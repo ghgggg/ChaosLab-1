@@ -216,9 +216,9 @@ namespace chaos
 		Steps(size_t sz) { Allocate(sz); }
 
 		// row steps
-		uint GetRStep(uint step) const { return sz == 1 ? step : buf[sz - 2]; }
+		uint GetRStep(uint step) const { return sz <= 1 ? step : buf[sz - 2]; }
 		// channel steps
-		uint GetCStep(uint step) const { return sz == 1 || sz == 2 ? step : buf[sz - 3]; };
+		uint GetCStep(uint step) const { return sz <= 2 ? step : buf[sz - 3]; };
 	};
 
 	class Shape : public Vec<uint>
@@ -247,7 +247,7 @@ namespace chaos
 			buf[0] = n; buf[1] = c; buf[2] = h; buf[3] = w;
 		}
 
-		size_t vol() const noexcept { return std::accumulate(begin(), end(), 1, std::multiplies<uint>()); }
+		size_t vol() const noexcept { return empty() ? 0 : std::accumulate(begin(), end(), 1, std::multiplies<uint>()); }
 
 		Steps steps() const noexcept
 		{

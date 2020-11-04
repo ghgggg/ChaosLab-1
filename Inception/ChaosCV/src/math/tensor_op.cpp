@@ -260,10 +260,9 @@ namespace chaos
     {
         Tensor src = _src.GetTensor();
 
-        if (_dst.empty()) _dst.Create({ src.shape[1], src.shape[0] }, Steps(), src.depth, src.packing, src.allocator);
-        Tensor& dst = _dst.GetTensorRef();
-        CHECK(src.shape[0], dst.shape[1]);
-        CHECK(src.shape[1], dst.shape[0]);
+        if (_dst.empty() || _dst.shape(0) != src.shape[1] || _dst.shape(1) != src.shape[0])
+            _dst.Create(/*shape=*/{ src.shape[1], src.shape[0] }, /*steps=*/{ src.shape[0],(uint)1 }, src.depth, src.packing, src.allocator);
+        Tensor& dst = _dst.GetTensorRef();;
 
         size_t esz = 1 * src.depth * src.packing;
         if (dst.data == src.data)

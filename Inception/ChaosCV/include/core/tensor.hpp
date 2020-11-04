@@ -31,6 +31,7 @@ namespace chaos
 
 		bool empty() const noexcept { return data == nullptr || shape.vol() == 0; }
 		bool continua() const noexcept { return shape.vol() == ((size_t)shape[0] * steps[0]); }
+		size_t total() const noexcept { return empty() ? 0 : (size_t)shape[0] * steps[0]; }
 
 		/// <summary>ref_cnt++</summary>
 		void AddRef() noexcept { if(ref_cnt) CHAOS_XADD(ref_cnt, 1); }
@@ -76,6 +77,8 @@ namespace chaos
 		bool IsTensor() const;
 
 		bool empty() const;
+		Shape shape() const;
+		uint shape(int idx) const;
 	protected:
 		int flag;
 		void* obj;

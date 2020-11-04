@@ -61,7 +61,7 @@ namespace chaos
 		depth = _depth;
 		packing = _packing;
 		allocator = _allocator;
-		steps = _steps; //Steps(shape, 1 * depth * packing);
+		steps = _steps;
 
 		size_t total = (size_t)steps[0] * shape[0];
 		if (total > 0)
@@ -99,14 +99,13 @@ namespace chaos
 
 	void Tensor::CopyTo(const OutputArray& arr, Allocator* allocator) const
 	{
-		if (arr.empty()) arr.Create(shape, steps, depth, packing, allocator);
+		if (arr.empty() || arr.shape() != shape) arr.Create(shape, shape.steps(), depth, packing, allocator);
 		Tensor& t = arr.GetTensorRef();
-		CHECK_EQ(t.shape, shape);
 
 		size_t elem_size = 1 * depth * packing;
 		if (continua() && t.continua())
 		{
-			memcpy(t.data, data, (size_t)shape[0] * steps[0] * elem_size);
+			memcpy(t.data, data, total() * elem_size);
 		}
 		else
 		{
@@ -147,31 +146,21 @@ namespace chaos
 		LOG(FATAL) << "unknown/unsupported array type";
 		return Tensor();
 	}
-	//void InputArray::GetVectorTensor(std::vector<Tensor>& mv) const
-	//{
-	//	if (flag == TENSOR)
-	//	{
-	//		const Tensor& t = *(Tensor*)obj;
-	//		mv.emplace_back(t);
-	//		//mv.resize(1);
-	//		//mv[0] = t;
-	//		return;
-	//	}
-	//	if (flag == VECTOR_TENSOR)
-	//	{
-	//		const std::vector<Tensor>& data = *(std::vector<Tensor>*)obj;
-	//		size_t n = data.size();
-	//		mv.resize(n);
-	//		for (size_t i = 0; i < n; i++)
-	//			mv[i] = data[i];
-	//		return;
-	//	}
-	//	LOG(FATAL) << "unknown/unsupported array type";
-	//}
 	bool InputArray::IsTensor() const { return flag == TENSOR; }
 	bool InputArray::empty() const
 	{
 		if (flag == TENSOR) return ((const Tensor*)obj)->empty();
+		return true;
+	}
+	Shape InputArray::shape() const
+	{
+		if (flag == TENSOR) return ((const Tensor*)obj)->shape;
+		return Shape();
+	}
+	uint InputArray::shape(int idx) const
+	{
+		if (flag == TENSOR) return ((const Tensor*)obj)->shape[idx];
+		return 0;
 	}
 	void InputArray::Init(int _flag, const void* _obj)
 	{
@@ -185,7 +174,7 @@ namespace chaos
 	{
 		if (flag == TENSOR)
 		{
-			return ((Tensor*)obj)->Create(shape, steps.empty() ? shape.steps() : steps, depth, packing, allocator);
+			return ((Tensor*)obj)->Create(shape, steps, depth, packing, allocator);
 		}
 		if (flag == NONE)
 		{
