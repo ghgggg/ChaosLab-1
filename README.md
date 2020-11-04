@@ -1,6 +1,6 @@
 
 # Chaos Lab
-[![Build Status](https://dev.azure.com/zjysnow/ChaosLab/_apis/build/status/zjysnow.ChaosLab?branchName=master)](https://dev.azure.com/zjysnow/ChaosLab/_build/latest?definitionId=23&branchName=master)
+[![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE.txt)  [![Build Status](https://dev.azure.com/zjysnow/ChaosLab/_apis/build/status/zjysnow.ChaosLab?branchName=master)](https://dev.azure.com/zjysnow/ChaosLab/_build/latest?definitionId=23&branchName=master)
 
 # ChaosCV
 目的是为了实现类似TinyCV的模块，以及方便测试等，同时能够用相同的接口封装多个深度学习的推理框架  
