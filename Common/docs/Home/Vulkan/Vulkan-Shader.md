@@ -1,11 +1,12 @@
+着色器模块，在Vulkan中必须以二进制字节码的格式使用，可以通过SDK中提供的glslangValidator将类似*.comp的代码编译成SPIR-V。
 # 解析
-类型：`uint32_t`
+类型：`uint32_t`  
 数据最开头5个值分别表示：
  - magic 
  - version 
  - generator 
  - bound 
- - schema
+ - schema  
 接下来由多个op组成，对于每个op，类型（低16位）和长度（高16位）存储于第一个`uint32_t`中，依据op的类型会有不同的解析形式。目前已知的op类型包含以下几种（仅出现于NCNN代码中中）：   
 
 |**OP**|**Value**|**Description**|
