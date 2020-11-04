@@ -1,4 +1,6 @@
-着色器模块，在Vulkan中必须以二进制字节码的格式使用，可以通过SDK中提供的glslangValidator将类似*.comp的代码编译成SPIR-V。
+着色器模块，在Vulkan中必须以二进制字节码的格式使用，可以通过SDK中提供的glslangValidator将类似*.comp的GLSL代码编译成SPIR-V。  
+GLSL代码需要一个main函数作为入口。
+
 # 解析
 类型：`uint32_t`  
 数据最开头5个值分别表示：
