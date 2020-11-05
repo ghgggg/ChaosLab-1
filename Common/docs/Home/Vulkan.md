@@ -4,7 +4,7 @@
 # 整体计算流程
 1. Create GPU Instance  
    实例化```VkInstance```并获取GPU Info以及```VkDevice```
-2. 创建对应的Allocator  
+2. 创建对应的VkAllocator  
    管理```VkBuffer```和```VkDeviceMemory```对象
 3. 创建Command用于执行实际的命令  
    包括数据的Upload、Download以及Clone，Pipeline的绑定（感觉用词不准确）
@@ -16,8 +16,14 @@
    在销毁VkInstance之前，需要销毁所有和Vulkan相关的资源
 
 # 模块
-从计算流程中可以看到，Vulkan的代码至少包含5个比较重要的部分：VkDevice，VkAllocator，Command，Pipeline和Shader。
+从计算流程中可以看到，Vulkan的代码至少包含5个比较重要的部分：VkDevice，VkAllocator，Command，Pipeline和Shader。更详细的信息可以参考Basic Types以及相关的文档
 ## VkDevice
 Vulkan获取的逻辑设备，后续所有的模块都需要传入```VkDevice```
-## Allocator
-显存管理（```VkDeviceMemory```）,```VkBuffer```需要绑定设备内存，所有GPU矩阵的内存分配都需要指定Allocator
+## VkAllocator
+显存管理（```VkDeviceMemory```）,```VkBuffer```需要绑定设备内存，所有GPU矩阵的内存分配都需要指定VkAllocator
+## Command
+命令缓冲，记录或执行计算任务的各个命令
+## Pipeline
+管线，包括了具体的布局、顶点数据输入情况等设置
+## Shader
+着色器，个人理解是GPU执行单元，通过Record Pipeline执行具体的操作，其代码类似C，需要通过sdk提供的编译器编译成二进制码使用
