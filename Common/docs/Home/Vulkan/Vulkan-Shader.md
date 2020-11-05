@@ -2,13 +2,14 @@
 GLSL代码需要一个main函数作为入口。
 
 # 传递数据
-主题上分为三种方式（大概）   
-layout constant_id 通过VkSpecializationType传递，需要在create pipeline的时候确定下来，整个生存周期都无法改变   
-layout binding传递矩阵，通过readonly和writeonly来限定只读或者只写   
-layout push_constant用于传递一些常量，在生存周期中可以更新   
- - 理解上对于push_constant空间是一整块连续内存，如果要将原有NCNN传递单个变量的形式写成数组形式，需要修改vk_constant变量的表现形式，并且在调用vkCmdPushConstants时，将内存连续起来并重新计算数据长度
+主体上分为三种方式（大概）   
+1. layout constant_id通过VkSpecializationType传递，需要在create pipeline的时候确定下来，整个生存周期都无法改变   
+2. layout binding传递矩阵，通过readonly和writeonly来限定只读或者只写   
+3. layout push_constant用于传递一些常量，在生存周期中可以更新   
+其实应该还有一种写法如```layout (local_size_x_id = 233) in;```，新版本中似乎是换了，不做讨论
 
 # 解析
+老版本NCNN中没有直接解析Shader的二进制码的代码  
 类型：`uint32_t`  
 数据最开头5个值分别表示：
  - magic 
@@ -16,11 +17,12 @@ layout push_constant用于传递一些常量，在生存周期中可以更新
  - generator 
  - bound 
  - schema  
-接下来由多个op组成，对于每个op，类型（低16位）和长度（高16位）存储于第一个`uint32_t`中，依据op的类型会有不同的解析形式。目前已知的op类型包含以下几种（仅出现于NCNN代码中中）：   
+
+接下来由多个op组成，对于每个op，类型（低16位）和长度（高16位）存储于第一个`uint32_t`中，依据op的类型会有不同的解析形式。目前已知的op类型包含以下几种（仅出现于NCNN代码中）：   
 
 |**OP**|**Value**|**Description**|
 |:---|:---:|---|
-|Name|5|可以获取Shader的名字|
+|Name|5|可以获取Shader layout的名字|
 |MemberName|6|-|
 |ExecutionMode|16|在mode=17时，在NCNN中应该是对应设置数据的3个维度|
 |TypeImage|25|-|
