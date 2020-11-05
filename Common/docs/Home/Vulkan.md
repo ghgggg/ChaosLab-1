@@ -16,4 +16,8 @@
    在销毁VkInstance之前，需要销毁所有和Vulkan相关的资源
 
 # 模块
-从计算流程中可以看到，Vulkan的代码至少包含5个比较重要的部分：VkDevice，Allocator，Command，Pipeline和Shader。
+从计算流程中可以看到，Vulkan的代码至少包含5个比较重要的部分：VkDevice，VkAllocator，Command，Pipeline和Shader。
+## VkDevice
+Vulkan获取的逻辑设备，后续所有的模块都需要传入```VkDevice```
+## Allocator
+显存管理（```VkDeviceMemory```）,```VkBuffer```需要绑定设备内存，所有GPU矩阵的内存分配都需要指定Allocator
