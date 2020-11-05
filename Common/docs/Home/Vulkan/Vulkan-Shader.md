@@ -1,6 +1,12 @@
 着色器模块，在Vulkan中必须以二进制字节码的格式使用，可以通过SDK中提供的glslangValidator将类似*.comp的GLSL代码编译成SPIR-V。  
 GLSL代码需要一个main函数作为入口。
 
+# 传递数据
+主题上分为三种方式（大概）   
+layout constant_id 通过VkSpecializationType传递，需要在create pipeline的时候确定下来，整个生存周期都无法改变   
+layout binding传递矩阵，通过readonly和writeonly来限定只读或者只写   
+layout push_constant用于传递一些常量，在生存周期中可以更新   
+
 # 解析
 类型：`uint32_t`  
 数据最开头5个值分别表示：
