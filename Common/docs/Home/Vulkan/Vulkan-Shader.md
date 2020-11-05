@@ -6,7 +6,7 @@ GLSL代码需要一个main函数作为入口。
 layout constant_id 通过VkSpecializationType传递，需要在create pipeline的时候确定下来，整个生存周期都无法改变   
 layout binding传递矩阵，通过readonly和writeonly来限定只读或者只写   
 layout push_constant用于传递一些常量，在生存周期中可以更新   
- - 理解上对于push_constant空间
+ - 理解上对于push_constant空间是一整块连续内存，如果要将原有NCNN传递单个变量的形式写成数组形式，需要修改vk_constant变量的表现形式，并且在调用vkCmdPushConstants时，将内存连续起来并重新计算数据长度
 
 # 解析
 类型：`uint32_t`  
