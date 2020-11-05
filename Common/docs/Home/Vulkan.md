@@ -16,14 +16,14 @@
    在销毁VkInstance之前，需要销毁所有和Vulkan相关的资源
 
 # 模块
-从计算流程中可以看到，Vulkan的代码至少包含5个比较重要的部分：VkDevice，VkAllocator，Command，Pipeline和Shader。更详细的信息可以参考Basic Types以及相关的文档
+从计算流程中可以看到，Vulkan的代码至少包含5个比较重要的部分：VkDevice，VkAllocator，Command，Pipeline和Shader。更详细的信息可以参考[Basic Types](/Home/Vulkan/Vulkan-Basic-Types)以及相关的文档
 ## VkDevice
 Vulkan获取的逻辑设备，后续所有的模块都需要传入```VkDevice```
-## VkAllocator
+## [VkAllocator](/Home/Vulkan/VkAllocator)
 显存管理（```VkDeviceMemory```）,```VkBuffer```需要绑定设备内存，所有GPU矩阵的内存分配都需要指定VkAllocator
-## Command
+## [Command](/Home/Vulkan/Command)
 命令缓冲，记录或执行计算任务的各个命令
-## Pipeline
+## [Pipeline](/Home/Vulkan/Pipeline)
 管线，包括了具体的布局、顶点数据输入情况等设置
-## Shader
+## [Shader](/Home/Vulkan/Vulkan-Shader)
 着色器，个人理解是GPU执行单元，通过Record Pipeline执行具体的操作，其代码类似C，需要通过sdk提供的编译器编译成二进制码使用
