@@ -3,9 +3,13 @@ GLSL代码需要一个main函数作为入口。
 
 # 传递数据
 主体上分为三种方式（大概）   
-1. layout constant_id通过VkSpecializationType传递，需要在create pipeline的时候确定下来，整个生存周期都无法改变   
-2. layout binding传递矩阵，通过readonly和writeonly来限定只读或者只写   
-3. layout push_constant用于传递一些常量，在生存周期中可以更新   
+1. layout constant_id  
+   通过VkSpecializationType传递，需要在create pipeline的时候确定下来，整个生存周期都无法改变   
+2. layout binding  
+   传递矩阵，通过readonly和writeonly来限定只读或者只写   
+3. layout push_constant  
+   用于传递一些常量，在生存周期中可以更新   
+
 其实应该还有一种写法如```layout (local_size_x_id = 233) in;```，新版本中似乎是换了，不做讨论
 
 # 解析
@@ -41,11 +45,6 @@ GLSL代码需要一个main函数作为入口。
 -D buffer_ld1(buf,i)=buf[i] 取buffer，packing 1
 -D buffer_st1(buf,i,v)={buf[i]=v;} 设置buffer， packing 1
 
-# Pipeline
-目前看到的layout类型包括3种
- - constant_id
- - binding
- - push_constant
 
 # 编译
 glslangValidator -Dsfp=float -Dafp=float "-D buffer_ld1(buf,i)=buf[i]" "-D buffer_st1(buf,i,v)={buf[i]=v;}" "-D psc(x)=(x==0?p.x:x)" -V  --vn innerproduct -x -o innerproduct.spv.hex.hpp innerproduct.comp
